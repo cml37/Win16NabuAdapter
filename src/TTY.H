@@ -41,7 +41,7 @@
 #define MAXROWS         25
 #define MAXCOLS         80
 
-#define MAXBLOCK        1
+#define MAXBLOCK        80
 
 #define MAXLEN_TEMPSTR  81
 
@@ -157,7 +157,8 @@ BOOL NEAR ScrollTTYVert( HWND, WORD, WORD ) ;
 BOOL NEAR SizeTTY( HWND, WORD, WORD ) ;
 BOOL NEAR ProcessTTYCharacter( HWND, BYTE ) ;
 BOOL NEAR WriteTTYBlock( HWND, LPSTR, int ) ;
-int NEAR ReadCommBlock( HWND, LPSTR ) ;
+int NEAR ReadCommBlock( HWND, LPSTR, int ) ;
+int NEAR ReadCommByte( HWND, BYTE* ) ;
 BOOL NEAR WriteCommBlock( HWND, BYTE*, int ) ;
 BOOL NEAR WriteCommByte( HWND, BYTE ) ;
 BOOL NEAR MoveTTYCursor( HWND ) ;
@@ -180,3 +181,4 @@ BOOL FAR PASCAL SettingsDlgProc( HWND, UINT, WPARAM, LPARAM ) ;
 //---------------------------------------------------------------------------
 //  End of File: tty.h
 //---------------------------------------------------------------------------
+

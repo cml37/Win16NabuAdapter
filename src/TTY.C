@@ -393,10 +393,10 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    EnableMenuItem( hMenu, IDM_CONNECT, MF_ENABLED | MF_BYCOMMAND ) ;
 
     // Always start out in connected mode if possible
-    if (!OpenConnection( hWnd )) {
-        MessageBox( hWnd, "Connection failed.", gszAppName,
-        MB_ICONEXCLAMATION ) ;
-    }
+   if ( !OpenConnection( hWnd ) ) {
+      MessageBox( hWnd, "Connection failed.", gszAppName,
+      MB_ICONEXCLAMATION ) ;
+   }
 
    return ( (LRESULT) TRUE ) ;
 
@@ -887,7 +887,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 {
    char       szError[ 10 ] ;
    int        nError, nLength ;
-   BYTE       abIn[ MAXBLOCK + 1] ;
+   BYTE       abIn ;
    COMSTAT    ComStat ;
    NPTTYINFO  npTTYInfo ;
    MSG        msg ;
@@ -914,11 +914,12 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 
       do
       {
-         if (nLength = ReadCommBlock( hWnd, (LPSTR) abIn))
+         if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn[ 0 ]) ;
+            processNABU(hWnd, abIn) ;
 
             // force a paint
+
             UpdateWindow( hWnd ) ;
          }
       }
@@ -935,9 +936,9 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 
       do
       {
-         if (nLength = ReadCommBlock( hWnd, (LPSTR) abIn))
+         if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn[ 0 ]) ;
+            processNABU(hWnd, abIn) ;
 
             // force a paint
 
@@ -1238,7 +1239,7 @@ BOOL NEAR CloseConnection( HWND hWnd )
 //
 //---------------------------------------------------------------------------
 
-int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock )
+int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 {
    char       szError[ 10 ] ;
    int        nLength, nError ;
@@ -1247,7 +1248,7 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock )
    if (NULL == (npTTYInfo = (NPTTYINFO) GetWindowWord( hWnd, GWW_NPTTYINFO )))
       return ( FALSE ) ;
 
-   nLength = ReadComm( COMDEV( npTTYInfo ), lpszBlock, 1 ) ;
+   nLength = ReadComm( COMDEV( npTTYInfo ), lpszBlock, nMaxLength ) ;
 
    if (nLength < 0)
    {
@@ -1265,6 +1266,54 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock )
    return ( nLength ) ;
 
 } // end of ReadCommBlock()
+
+//---------------------------------------------------------------------------
+//  BOOL NEAR ReadCommByte( HWND hWnd, BYTE* bByte )
+//
+//  Description:
+//     Reads a byte from the COM port and stuffs it into
+//     the provided byte.
+//
+//  Parameters:
+//     HWND hWnd
+//        handle to TTY window
+//
+//     BYTE*
+//        byte used for storage
+//
+//  History:   Date       Author      Comment
+//             12/23/24   ChrisL      Wrote it.
+//
+//---------------------------------------------------------------------------
+
+int NEAR ReadCommByte ( HWND hWnd, BYTE* bByte )
+{
+   char       szError[ 10 ] ;
+   int        nLength, nError ;
+   NPTTYINFO  npTTYInfo ;
+
+   if (NULL == (npTTYInfo = (NPTTYINFO) GetWindowWord( hWnd, GWW_NPTTYINFO )))
+      return ( FALSE ) ;
+
+   nLength = ReadComm( COMDEV( npTTYInfo ), bByte, 1 ) ;
+
+   if (nLength < 0)
+   {
+      nLength *= -1 ;
+      while (nError = GetCommError( COMDEV( npTTYInfo ), NULL ))
+      {
+         if (DISPLAYERRORS( npTTYInfo ))
+         {
+            wsprintf( szError, "<CE-%d>", nError ) ;
+            WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
+         }
+      }
+   }
+
+   return ( nLength ) ;
+
+} // end of ReadCommByte()
+
 
 //---------------------------------------------------------------------------
 //  BOOL NEAR WriteCommByte( HWND hWnd, BYTE bByte )
