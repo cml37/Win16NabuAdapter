@@ -1,0 +1,10 @@
+*.err
+*.exe
+*.map
+*.mk?
+*.obj
+*.txt
+*.res
+*.sym
+*.lk?
+*.mk
