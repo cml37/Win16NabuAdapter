@@ -27,16 +27,22 @@ TTYBITMAP BITMAP nabu.bmp
 
 TTYMENU MENU LOADONCALL MOVEABLE PURE DISCARDABLE
 BEGIN
-   POPUP "&Action"
-   BEGIN
-      MenuItem "&Connect\tShift+PgUp",     IDM_CONNECT
-      MenuItem "&Disconnect\tShift+PgDn",  IDM_DISCONNECT
-      MenuItem  SEPARATOR
-      MenuItem  "E&xit",       IDM_EXIT
-   END
-   MenuItem "&Settings...",       IDM_SETTINGS
-   MenuItem "A&bout",          IDM_ABOUT
+    POPUP "&Action"
+    BEGIN
+        MENUITEM "&Connect\tShift+PgUp",        IDM_CONNECT
+        MENUITEM "&Disconnect\tShift+PgDn",     IDM_DISCONNECT
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    MENUITEM "&Settings...",                IDM_SETTINGS
+    MENUITEM "A&bout",                      IDM_ABOUT
 END
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
 
 TTYACCEL ACCELERATORS
 BEGIN
@@ -44,7 +50,13 @@ BEGIN
   VK_NEXT, IDM_DISCONNECT, VIRTKEY, SHIFT
 END
 
-SETTINGSDLGBOX DIALOG 25, 20, 200, 175
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+SETTINGSDLGBOX DIALOG 25, 20, 200, 190
 STYLE WS_POPUP | WS_CAPTION
 CAPTION "TTY Settings..."
 FONT 8, "Helv"
@@ -79,7 +91,7 @@ BEGIN
                     30, 50, 10
     CONTROL         "Local Echo", IDD_LOCALECHO, "Button", BS_AUTOCHECKBOX,
                     135, 40, 50, 10
-    GROUPBOX        "Control &Options", 0xFFFF, 5, 135, 190, 35
+    GROUPBOX        "Control &Options", 0xFFFF, 5, 135, 190, 50
     CONTROL         "Use CN_RECEIVE Notifications", IDD_USECNRECEIVE,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 150, 115, 10
     CONTROL         "Display Errors", IDD_DISPLAYERRORS, "Button",
@@ -87,6 +99,8 @@ BEGIN
     PUSHBUTTON      "&Font", IDD_FONT, 140, 70, 40, 14, WS_GROUP
     DEFPUSHBUTTON   "Ok", IDD_OK, 140, 90, 40, 14
     PUSHBUTTON      "Cancel", IDD_CANCEL, 140, 110, 40, 14
+    EDITTEXT        IDC_CYCLE_PATH, 63, 165, 124, 13, ES_AUTOHSCROLL
+    LTEXT           "&Cycle Path:", 0xFFFF, 21, 167, 40, 11, NOT WS_GROUP
 END
 
 ABOUTDLGBOX DIALOG 10, 25, 220, 100
@@ -116,6 +130,12 @@ BEGIN
     LTEXT           "%d%%", IDD_RESOURCES, 120, 85, 74, 10, SS_NOPREFIX |
                     NOT WS_GROUP
 END
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
 
 STRINGTABLE
 BEGIN

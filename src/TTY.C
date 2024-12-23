@@ -357,6 +357,8 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    FGCOLOR( npTTYInfo )       = RGB( 0, 0, 0 ) ;
    USECNRECEIVE( npTTYInfo )  = TRUE ;
    DISPLAYERRORS( npTTYInfo ) = TRUE ;
+   CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLEPATH_LENGTH) ;
+   strcpy( CYCLEPATH( npTTYInfo ), "C:\\cycle\\" ) ;
 
    // clear screen space
 
@@ -430,6 +432,7 @@ BOOL NEAR DestroyTTYInfo( HWND hWnd )
       CloseConnection( hWnd ) ;
 
    DeleteObject( HTTYFONT( npTTYInfo ) ) ;
+   LocalFree( (HLOCAL) CYCLEPATH( npTTYInfo )) ;
 
    LocalFree( npTTYInfo ) ;
    return ( TRUE ) ;
@@ -916,7 +919,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo )) ;
 
             // force a paint
 
@@ -938,7 +941,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo )) ;
 
             // force a paint
 
@@ -1830,6 +1833,9 @@ BOOL NEAR SettingsDlgInit( HWND hDlg )
 
    CheckDlgButton( hDlg, IDD_DISPLAYERRORS, DISPLAYERRORS( npTTYInfo ) ) ;
 
+   SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_SETTEXT,
+                       NULL, (LPARAM) CYCLEPATH( npTTYInfo )) ;
+
    return ( TRUE ) ;
 
 } // end of SettingsDlgInit()
@@ -1966,6 +1972,15 @@ BOOL NEAR SettingsDlgTerm( HWND hDlg )
 
    USECNRECEIVE( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_USECNRECEIVE ) ;
    DISPLAYERRORS( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_DISPLAYERRORS ) ;
+   SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_GETTEXT,
+                                  (WPARAM)CYCLEPATH_LENGTH, (LPARAM) CYCLEPATH( npTTYInfo ) ) ;
+
+   // Add a slash to the end of the path if not present and if we are not beyond max length
+   if ( strlen( CYCLEPATH( npTTYInfo)) < CYCLEPATH_LENGTH &&
+        CYCLEPATH( npTTYInfo )[ strlen( CYCLEPATH( npTTYInfo )) - 1 ] != '\\')
+   {
+      strcat( CYCLEPATH( npTTYInfo ), "\\");
+   }
 
    return ( TRUE ) ;
 

@@ -68,6 +68,9 @@
 #define ASCII_XON       0x11
 #define ASCII_XOFF      0x13
 
+// config constants
+#define CYCLEPATH_LENGTH 100
+
 // data structures
 
 typedef struct tagTTYINFO
@@ -83,6 +86,7 @@ typedef struct tagTTYINFO
    DWORD   rgbFGColor ;
    int     xSize, ySize, xScroll, yScroll, xOffset, yOffset,
            nColumn, nRow, xChar, yChar ;
+   char*   cyclePath;
 
 } TTYINFO, NEAR *NPTTYINFO ;
 
@@ -119,6 +123,7 @@ typedef struct tagTTYINFO
 #define YCHAR( x ) (x -> yChar )
 #define USECNRECEIVE( x ) (x -> fUseCNReceive)
 #define DISPLAYERRORS( x ) (x -> fDisplayErrors)
+#define CYCLEPATH( x ) (x -> cyclePath)
 
 #define SET_PROP( x, y, z )  SetProp( x, MAKEINTATOM( y ), z )
 #define GET_PROP( x, y )     GetProp( x, MAKEINTATOM( y ) )

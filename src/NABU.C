@@ -19,7 +19,8 @@
 // TODOs
 // Implement Time Segment
 // Implement support for NABU files
-// Unhardcode path to cycle files (easy to add a config option to the dialogue)
+// Add ability to save settings
+// Use standard Windows functions for items like malloc, strcpy, etc.
 
 // Base on the way that byte reads are not blocking,
 // I've come up with a scheme to track the current processing
@@ -48,7 +49,7 @@ void freeLoadedPackets()
 }
 
 // Load a file packet based on the current packet and segment number
-BOOL NEAR loadFilePacket( HWND hWnd )
+BOOL NEAR loadFilePacket( HWND hWnd, char* filePath)
 {
    char message[ 80 ] ;
    int packetLength = 0 ;
@@ -68,13 +69,13 @@ BOOL NEAR loadFilePacket( HWND hWnd )
    }
 
    // TODO make dynamic
-   wsprintf( segmentName, "C:\\cycle\\%06lx.pak", segmentNumber ) ;
+   wsprintf( segmentName, "%s%06lx.pak", filePath, segmentNumber ) ;
    wsprintf( message, "Cycle file: %s\r\n", segmentName ) ;
    WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      wsprintf( message, "Could not open file C:\\cycle\\%06lx.pak\r\n", segmentNumber ) ;
+      wsprintf( message, "Could not open file %s%06lx.pak\r\n", filePath, segmentNumber ) ;
       WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
       return FALSE ;
    }
@@ -150,7 +151,7 @@ void sendPacket( HWND hWnd )
 }
 
 // Handle a file request
-BOOL NEAR handleFileRequest( HWND hWnd, BYTE b )
+BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath )
 {
    char message[ 80 ] ;
    char write[ 4 ] ;
@@ -203,7 +204,7 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b )
 
       WriteCommByte(hWnd, 0xE4) ;
 
-      if ( !loadFilePacket( hWnd ) )
+      if ( !loadFilePacket( hWnd, filePath ) )
       {
          wsprintf( message, "Packet not found %06x\r\n", packetNumber );
          WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
@@ -278,7 +279,7 @@ BOOL resetNabuState()
 }
 
 // Main NABU processing loop
-void NEAR processNABU( HWND hWnd, BYTE b )
+void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
 {
    int channel ;
    char message[ 40 ] ;
@@ -328,7 +329,7 @@ void NEAR processNABU( HWND hWnd, BYTE b )
             wsprintf( message, "File Request\r\n" ) ;
             WriteTTYBlock( hWnd, (LPSTR) message, strlen( message )) ;
          }
-         if ( handleFileRequest( hWnd, b) )
+         if ( handleFileRequest( hWnd, b, filePath ) )
          {
             break ;
          }

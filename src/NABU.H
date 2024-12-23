@@ -19,4 +19,4 @@
 #include <windows.h>
 
 BOOL resetNabuState() ;
-void NEAR processNABU( HWND hWnd, BYTE b ) ;
+void NEAR processNABU( HWND, BYTE, char* ) ;
