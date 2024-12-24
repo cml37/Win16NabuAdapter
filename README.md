@@ -5,8 +5,6 @@ Win16 version of the NABU Adapter
 * Only supports PAK files at present
 * Doesn't implement Time segment
 * General sizing/scaling of the app
-* When using RS232, on slower systems, I believe we are suffering buffer underruns or something of the sort
-  * So far, I have not been able to run this on a system that is slower than a Pentium II
 * Add ability to save configuration
 
 # Building
