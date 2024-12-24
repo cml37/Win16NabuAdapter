@@ -888,7 +888,7 @@ BOOL NEAR MoveTTYCursor( HWND hWnd )
 
 BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 {
-   char       szError[ 10 ] ;
+   char       szError[ 20 ] ;
    int        nError, nLength ;
    BYTE       abIn ;
    COMSTAT    ComStat ;
@@ -951,7 +951,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
          {
             if (DISPLAYERRORS( npTTYInfo ))
             {
-               wsprintf( szError, "<CE-%d>", nError ) ;
+               wsprintf( szError, "<CE-%04x>", nError ) ;
                WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
             }
          }
@@ -1244,7 +1244,7 @@ BOOL NEAR CloseConnection( HWND hWnd )
 
 int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 {
-   char       szError[ 10 ] ;
+   char       szError[ 20 ] ;
    int        nLength, nError ;
    NPTTYINFO  npTTYInfo ;
 
@@ -1260,7 +1260,7 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
       {
          if (DISPLAYERRORS( npTTYInfo ))
          {
-            wsprintf( szError, "<CE-%d>", nError ) ;
+            wsprintf( szError, "<CE-%04x>", nError ) ;
             WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
          }
       }
@@ -1291,7 +1291,7 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 
 int NEAR ReadCommByte ( HWND hWnd, BYTE* bByte )
 {
-   char       szError[ 10 ] ;
+   char       szError[ 20 ] ;
    int        nLength, nError ;
    NPTTYINFO  npTTYInfo ;
 
@@ -1307,7 +1307,7 @@ int NEAR ReadCommByte ( HWND hWnd, BYTE* bByte )
       {
          if (DISPLAYERRORS( npTTYInfo ))
          {
-            wsprintf( szError, "<CE-%d>", nError ) ;
+            wsprintf( szError, "<CE-%04x>", nError ) ;
             WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
          }
       }
