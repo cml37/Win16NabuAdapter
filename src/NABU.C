@@ -69,7 +69,6 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath)
       return FALSE ;
    }
 
-   // TODO make dynamic
    wsprintf( segmentName, "%s%06lx.pak", filePath, segmentNumber ) ;
    wsprintf( message, "Cycle file: %s\r\n", segmentName ) ;
    WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
