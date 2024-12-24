@@ -25,7 +25,8 @@
 // Base on the way that byte reads are not blocking,
 // I've come up with a scheme to track the current processing
 // command byte as well as determine which stage we are in for the processing byte
-BYTE processingByte ;
+BYTE lastResetProcessingByte = 0x0;
+BYTE processingByte;
 BOOL processingByteInitialized = FALSE ;
 int  processingStage = 0 ;
 
@@ -292,6 +293,7 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
    }
    else
    {
+      lastResetProcessingByte = processingByte;
       processingByte = b ;
       processingByteInitialized = TRUE ;
    }
@@ -401,7 +403,10 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
       default:
          wsprintf( message, "Unrecognized command 0x%x\r\n", b ) ;
          WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         resetNabuState() ;
+         resetNabuState();
+
+         // Let's try to execute the last inititialized command we had
+         processNABU( hWnd, lastResetProcessingByte, filePath );
          break ;
    }
 }
