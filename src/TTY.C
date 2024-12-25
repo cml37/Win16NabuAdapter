@@ -356,7 +356,7 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    HTTYFONT( npTTYInfo )      = NULL ;
    FGCOLOR( npTTYInfo )       = RGB( 0, 0, 0 ) ;
    USECNRECEIVE( npTTYInfo )  = TRUE ;
-   DISPLAYERRORS( npTTYInfo ) = TRUE ;
+   DISPLAYERRORS( npTTYInfo ) = FALSE ;
    CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLEPATH_LENGTH) ;
    strcpy( CYCLEPATH( npTTYInfo ), "C:\\cycle\\" ) ;
 

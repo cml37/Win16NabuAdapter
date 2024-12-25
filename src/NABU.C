@@ -17,8 +17,6 @@
 #include "ttyexterns.h"
 
 // TODOs
-// Implement Time Segment
-// Implement support for NABU files
 // Add ability to save settings
 // Use standard Windows functions for items like malloc, strcpy, etc.
 
@@ -38,6 +36,35 @@ DWORD segmentNumber ;
 unsigned char *loadedPacketPtr = NULL ;
 int            loadedPacketLength = 0 ;
 
+int cycleCrcTable[] =
+    { 0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290,
+      45419, 49548, 53677, 57806, 61935, 4657, 528, 12915, 8786, 21173,
+      17044, 29431, 25302, 37689, 33560, 45947, 41818, 54205, 50076,
+      62463, 58334, 9314, 13379, 1056, 5121, 25830, 29895, 17572, 21637,
+      42346, 46411, 34088, 38153, 58862, 62927, 50604, 54669, 13907, 9842,
+      5649, 1584, 30423, 26358, 22165, 18100, 46939, 42874, 38681, 34616,
+      63455, 59390, 55197, 51132, 18628, 22757, 26758, 30887, 2112, 6241,
+      10242, 14371, 51660, 55789, 59790, 63919, 35144, 39273, 43274,
+      47403, 23285, 19156, 31415, 27286, 6769, 2640, 14899, 10770, 56317,
+      52188, 64447, 60318, 39801, 35672, 47931, 43802, 27814, 31879,
+      19684, 23749, 11298, 15363, 3168, 7233, 60846, 64911, 52716, 56781,
+      44330, 48395, 36200, 40265, 32407, 28342, 24277, 20212, 15891,
+      11826, 7761, 3696, 65439, 61374, 57309, 53244, 48923, 44858, 40793,
+      36728, 37256, 33193, 45514, 41451, 53516, 49453, 61774, 57711, 4224,
+      161, 12482, 8419, 20484, 16421, 28742, 24679, 33721, 37784, 41979,
+      46042, 49981, 54044, 58239, 62302, 689, 4752, 8947, 13010, 16949,
+      21012, 25207, 29270, 46570, 42443, 38312, 34185, 62830, 58703,
+      54572, 50445, 13538, 9411, 5280, 1153, 29798, 25671, 21540, 17413,
+      42971, 47098, 34713, 38840, 59231, 63358, 50973, 55100, 9939, 14066,
+      1681, 5808, 26199, 30326, 17941, 22068, 55628, 51565, 63758, 59695,
+      39368, 35305, 47498, 43435, 22596, 18533, 30726, 26663, 6336, 2273,
+      14466, 10403, 52093, 56156, 60223, 64286, 35833, 39896, 43963,
+      48026, 19061, 23124, 27191, 31254, 2801, 6864, 10931, 14994, 64814,
+      60687, 56684, 52557, 48554, 44427, 40424, 36297, 31782, 27655,
+      23652, 19525, 15522, 11395, 7392, 3265, 61215, 65342, 53085, 57212,
+      44955, 49082, 36825, 40952, 28183, 32310, 20053, 24180, 11923,
+      16050, 3793, 7920 };
+
 // If we have a loaded packet, free it, and reset the packet pointer and length
 void freeLoadedPackets()
 {
@@ -47,6 +74,169 @@ void freeLoadedPackets()
   }
   loadedPacketPtr = NULL ;
   loadedPacketLength = 0 ;
+}
+
+// Calculates the CRC of a given cycle
+void NEAR calculateCycleCRC( BYTE *data, int dataLength )
+{
+   int seed = 0xFFFF ;
+   int i ;
+
+   for ( i = 0; i < dataLength; i++ )
+   {
+      int index = ((((seed >> 8)) ^ data[i] & 0xFF)) & 0xFF ;
+      seed <<= 8 ;
+      seed ^= cycleCrcTable[ index ] ;
+   }
+
+   // ok, now get the high and low order CRC bytes
+   seed ^= 0xFFFF ;
+   data[ dataLength ] = (BYTE) ((seed >> 8) & 0xFF) ;
+   data[ dataLength + 1 ] = (BYTE) (seed & 0xFF) ;
+}
+
+// Creates the time segment
+void NEAR createTimeSegment()
+{
+   time_t now ;
+   struct tm *currTime ;
+   time(&now) ;
+   currTime = localtime(&now) ;
+
+   loadedPacketPtr  = ( char* )malloc( TIME_SEGMENT_SIZE ) ;
+
+   loadedPacketPtr[ 0 ] = 0x7f ;
+   loadedPacketPtr[ 1 ] = 0xff ;
+   loadedPacketPtr[ 2 ] = 0xff ;
+   loadedPacketPtr[ 3 ] = 0x0 ;
+   loadedPacketPtr[ 4 ] = 0x0 ;
+   loadedPacketPtr[ 5 ] = 0x7f ;
+   loadedPacketPtr[ 6 ] = 0xff ;
+   loadedPacketPtr[ 7 ] = 0xff ;
+   loadedPacketPtr[ 8 ] = 0xff ;
+   loadedPacketPtr[ 9 ] = 0x7f ;
+   loadedPacketPtr[ 10 ] = 0x80 ;
+   loadedPacketPtr[ 11 ] = 0x30 ;
+   loadedPacketPtr[ 12 ] = 0x0 ;
+   loadedPacketPtr[ 13 ] = 0x0 ;
+   loadedPacketPtr[ 14 ] = 0x0 ;
+   loadedPacketPtr[ 15 ] = 0x0 ;
+   loadedPacketPtr[ 16 ] = 0x2 ;
+   loadedPacketPtr[ 17 ] = 0x2 ;
+   loadedPacketPtr[ 18 ] = currTime->tm_wday + 1 ;
+   loadedPacketPtr[ 19 ] = 0x54 ;
+   loadedPacketPtr[ 20 ] = currTime->tm_mon + 1 ;
+   loadedPacketPtr[ 21 ] = currTime->tm_mday ;
+   loadedPacketPtr[ 22 ] = currTime->tm_hour % 12 ;
+   loadedPacketPtr[ 23 ] = currTime->tm_min ;
+   loadedPacketPtr[ 24 ] = currTime->tm_sec ;
+   loadedPacketPtr[ 25 ] = 0x0 ;
+   loadedPacketPtr[ 26 ] = 0x0 ;
+
+   // Calculate CRC will fill in indexes 27 and 28 with the CRC
+   calculateCycleCRC( loadedPacketPtr, 27 ) ;
+   loadedPacketLength = TIME_SEGMENT_SIZE ;
+}
+
+// Populates the packet header and CRC
+void NEAR populatePacketHeaderAndCrc( int offset, BOOL lastSegment, BYTE *buffer, int bytesRead )
+{
+   BYTE type = 0x20 ;
+
+   // Cobble together the header
+   buffer [ 0 ] = ((int) (segmentNumber >> 16) & 0xFF) ;
+   buffer [ 1 ] = ((int) (segmentNumber >> 8) & 0xFF) ;
+   buffer [ 2 ] = ((int) (segmentNumber & 0xFF)) ;
+   buffer [ 3 ] = packetNumber ;
+
+   // Owner
+   buffer [ 4 ] = 0x1 ;
+
+   // Tier
+   buffer [ 5 ] = 0x7F ;
+   buffer [ 6 ] = 0xFF ;
+   buffer [ 7 ] = 0xFF ;
+   buffer [ 8 ] = 0xFF ;
+
+   // Mystery bytes
+   buffer [ 9 ] = 0x7F ;
+   buffer [ 10 ] = 0x80 ;
+
+   // Packet Type
+   if ( lastSegment )
+   {
+      // Set the 4th bit to mark end of segment
+      type = (BYTE) ( type | 0x10 ) ;
+   }
+   else if ( packetNumber == 0 )
+   {
+      type = 0xa1 ;
+   }
+
+   buffer [ 11 ] = type ;
+   buffer [ 12 ] = packetNumber ;
+   buffer [ 13 ] = 0x0 ;
+   buffer [ 14 ] = ((int) (offset >> 8) & 0xFF) ;
+   buffer [ 15 ] = ((int) (offset & 0xFF)) ;
+
+   // Payload already prepopulated, so just calculate the CRC
+   calculateCycleCRC( buffer, PACKET_HEADER_SIZE + bytesRead ) ;
+}
+
+// Create a file packet based on the current packet and segment number
+BOOL NEAR createFilePacket( HWND hWnd, char* filePath )
+{
+   char message[ 80 ] ;
+   char segmentName[ 100 ] ;
+   FILE *file ;
+   long fileSize = 0 ;
+   int currentPacket = 0 ;
+   int offset = 0 ;
+   int bytesRead = 0 ;
+
+   wsprintf( segmentName, "%s%06lx.nab", filePath, segmentNumber ) ;
+   file = fopen( segmentName, "rb" ) ;
+   if ( file == NULL )
+   {
+      return FALSE ;
+   }
+
+   fseek( file, 0, SEEK_END ) ;
+   fileSize = ftell( file ) ;
+   rewind( file ) ;
+
+   if ( fileSize > 0 )
+   {
+      while ( ftell( file ) < fileSize )
+      {
+         if ( currentPacket == packetNumber )
+         {
+            offset = ftell( file );
+            loadedPacketPtr = ( char* )malloc( PACKET_HEADER_SIZE + PACKET_DATA_SIZE + PACKET_CRC_SIZE ) ;
+            if ( loadedPacketPtr == NULL )
+            {
+               wsprintf( message, "Error allocating memory\n" ) ;
+               WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
+               fclose( file ) ;
+               return FALSE ;
+            }
+            // Skip past the header and fill in the data
+            bytesRead = fread( &loadedPacketPtr[ PACKET_HEADER_SIZE ], 1, PACKET_DATA_SIZE, file ) ;
+            // Populate the header and CRC
+            populatePacketHeaderAndCrc( offset, ftell( file ) == fileSize, loadedPacketPtr, bytesRead ) ;
+            loadedPacketLength = PACKET_HEADER_SIZE + bytesRead + PACKET_CRC_SIZE ;
+            fclose( file ) ;
+            return TRUE ;
+         }
+         else
+         {
+            fseek( file, PACKET_DATA_SIZE, SEEK_CUR ) ;
+            currentPacket++ ;
+         }
+      }
+      fclose( file ) ;
+   }
+   return FALSE;
 }
 
 // Load a file packet based on the current packet and segment number
@@ -60,23 +250,10 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath)
    int currentPacket = 0 ;
    unsigned char packetBuffer[ 2 ] ;
 
-   freeLoadedPackets() ;
-
-   if ( segmentNumber == 0x7fffff )
-   {
-      wsprintf( message, "Time Segment, not yet implemented\r\n" ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      return FALSE ;
-   }
-
    wsprintf( segmentName, "%s%06lx.pak", filePath, segmentNumber ) ;
-   wsprintf( message, "Cycle file: %s\r\n", segmentName ) ;
-   WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      wsprintf( message, "Could not open file %s%06lx.pak\r\n", filePath, segmentNumber ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
       return FALSE ;
    }
 
@@ -204,13 +381,22 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath )
 
       WriteCommByte(hWnd, 0xE4) ;
 
-      if ( !loadFilePacket( hWnd, filePath ) )
+      freeLoadedPackets() ;
+
+      if ( segmentNumber == 0x7fffff )
       {
-         wsprintf( message, "Packet not found %06x\r\n", packetNumber );
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         WriteCommByte( hWnd, 0x90 ) ;
-         processingStage = 5;
-         return TRUE;
+         createTimeSegment();
+      }
+      else if ( !loadFilePacket( hWnd, filePath ) )
+      {
+         if ( !createFilePacket( hWnd, filePath ) )
+         {
+            wsprintf( message, "Could not load packet %06x\r\n", packetNumber );
+            WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
+            WriteCommByte( hWnd, 0x90 ) ;
+            processingStage = 5;
+            return TRUE;
+         }
       }
 
       WriteCommByte( hWnd, 0x91 ) ;
@@ -327,7 +513,7 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
       case 0x84: // File Transfer
          if ( processingStage == 0 )
          {
-            wsprintf( message, "File Request\r\n" ) ;
+            wsprintf( message, "File Request: " ) ;
             WriteTTYBlock( hWnd, (LPSTR) message, strlen( message )) ;
          }
          if ( handleFileRequest( hWnd, b, filePath ) )
@@ -361,8 +547,6 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
             write[ 1 ] = 0x10 ;
             write[ 2 ] = 0xE1 ;
             WriteCommBlock( hWnd, write, 3 ) ;
-            wsprintf( message, "Configure Channel Done\r\n" ) ;
-            WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
          }
 
          resetNabuState() ;
