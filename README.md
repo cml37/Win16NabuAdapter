@@ -2,8 +2,6 @@
 Win16 version of the NABU Adapter
 
 # Deficiencies 
-* Only supports PAK files at present
-* Doesn't implement Time segment
 * General sizing/scaling of the app
 * Add ability to save configuration
 
