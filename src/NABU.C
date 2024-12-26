@@ -162,7 +162,7 @@ BOOL NEAR downloadFileViaHttp( HWND hWnd, char* filePath, char *hostAndPath, cha
       return FALSE ;
    }
 
-   wsprintf( sendBuffer, "GET /%s/%06lx%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: nabu31\r\nAccept: */*\r\n\r\n", serverPath, segmentNumber, fileNameExtension, serverHost ) ;
+   wsprintf( sendBuffer, "GET /%s/%06lX%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: nabu31\r\nAccept: */*\r\n\r\n", serverPath, segmentNumber, fileNameExtension, serverHost ) ;
 
    he = gethostbyname( serverHost ) ;
    if ( he == NULL )
@@ -208,7 +208,7 @@ BOOL NEAR downloadFileViaHttp( HWND hWnd, char* filePath, char *hostAndPath, cha
    // Win16 only supports 8.3 file names, truncate the extension if needed
    strncpy( fileNameCorrectedExtension, fileNameExtension, 4 ) ;
    fileNameCorrectedExtension[ 4 ] = 0 ;
-   wsprintf( fileName, "%s%06lx%s", filePath, segmentNumber, fileNameCorrectedExtension ) ;
+   wsprintf( fileName, "%s%06lX%s", filePath, segmentNumber, fileNameCorrectedExtension ) ;
 
    firstGrab = TRUE ;
    while ( TRUE )
@@ -236,7 +236,7 @@ BOOL NEAR downloadFileViaHttp( HWND hWnd, char* filePath, char *hostAndPath, cha
       {
          dataPtr = strstr( responseBuffer, "HTTP/1.1 200 OK\r\n" ) ;
          // File not found, return
-         if (dataPtr == NULL) 
+         if (dataPtr == NULL)
          {
             socketCleanup( sd ) ;
             return FALSE ;
@@ -410,11 +410,11 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL t
    int offset = 0 ;
    int bytesRead = 0 ;
 
-   wsprintf( segmentName, "%s%06lx.nab", filePath, segmentNumber ) ;
+   wsprintf( segmentName, "%s%06lX.nab", filePath, segmentNumber ) ;
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if ( tryDownload ) 
+      if ( tryDownload )
       {
          downloadFileViaHttp( hWnd, filePath, hostAndPath, ".nabu" ) ;
          file = fopen( segmentName, "rb" ) ;
@@ -475,7 +475,7 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL try
    int currentPacket = 0 ;
    unsigned char packetBuffer[ 2 ] ;
 
-   wsprintf( segmentName, "%s%06lx.pak", filePath, segmentNumber ) ;
+   wsprintf( segmentName, "%s%06lX.pak", filePath, segmentNumber ) ;
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
@@ -610,7 +610,7 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPat
       tmp = ( unsigned char )b ;
       tmp = tmp << 16 ;
       segmentNumber = segmentNumber + tmp ;
-      wsprintf( message, "Segment %06lx, Packet %06x \r\n", segmentNumber, packetNumber ) ;
+      wsprintf( message, "Segment %06lX, Packet %06X \r\n", segmentNumber, packetNumber ) ;
       WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
 
       WriteCommByte(hWnd, 0xE4) ;
@@ -622,7 +622,7 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPat
          createTimeSegment();
       }
       // We will try local file access, then download.
-	  // Ugly code. Wow, this program is brand new and already needs a refactor.
+          // Ugly code. Wow, this program is brand new and already needs a refactor.
       else if ( !loadFilePacket( hWnd, filePath, hostAndPath, FALSE ) )
       {
          if ( !createFilePacket( hWnd, filePath, hostAndPath, FALSE ) )
@@ -631,7 +631,7 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPat
             {
                if ( !createFilePacket( hWnd, filePath, hostAndPath, TRUE ) )
                {
-                   wsprintf( message, "Could not load packet %06x\r\n", packetNumber );
+                   wsprintf( message, "Could not load segment %06X and packet %06X\r\n", segmentNumber, packetNumber );
                    WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
                    WriteCommByte( hWnd, 0x90 ) ;
                    processingStage = 5;
@@ -826,7 +826,7 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath, char* hostAndPath )
          resetNabuState() ;
          break ;
       default:
-         wsprintf( message, "Unrecognized command 0x%x\r\n", b ) ;
+         wsprintf( message, "Unrecognized command 0x%X\r\n", b ) ;
          WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
          resetNabuState();
 
