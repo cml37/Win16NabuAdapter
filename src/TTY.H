@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "version.h"
 #include "resource.h"
@@ -69,7 +70,7 @@
 #define ASCII_XOFF      0x13
 
 // config constants
-#define CYCLEPATH_LENGTH 100
+#define CYCLE_HOST_PATH_LENGTH 100
 
 // data structures
 
@@ -86,7 +87,8 @@ typedef struct tagTTYINFO
    DWORD   rgbFGColor ;
    int     xSize, ySize, xScroll, yScroll, xOffset, yOffset,
            nColumn, nRow, xChar, yChar ;
-   char*   cyclePath;
+   char*   cyclePath ;
+   char*   downloadHostAndPath ;
 
 } TTYINFO, NEAR *NPTTYINFO ;
 
@@ -124,6 +126,7 @@ typedef struct tagTTYINFO
 #define USECNRECEIVE( x ) (x -> fUseCNReceive)
 #define DISPLAYERRORS( x ) (x -> fDisplayErrors)
 #define CYCLEPATH( x ) (x -> cyclePath)
+#define DOWNLOADHOSTANDPATH( x ) (x -> downloadHostAndPath)
 
 #define SET_PROP( x, y, z )  SetProp( x, MAKEINTATOM( y ), z )
 #define GET_PROP( x, y )     GetProp( x, MAKEINTATOM( y ) )

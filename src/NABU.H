@@ -18,9 +18,11 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <time.h>
+#include <io.h>
+#include <winsock.h>
 
 BOOL resetNabuState() ;
-void NEAR processNABU( HWND, BYTE, char* ) ;
+void NEAR processNABU( HWND, BYTE, char*, char* ) ;
 
 #define PACKET_HEADER_SIZE 16
 #define PACKET_DATA_SIZE 993

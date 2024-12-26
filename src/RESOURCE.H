@@ -38,6 +38,7 @@
 #define IDD_USECNRECEIVE   0x22C
 #define IDD_DISPLAYERRORS  0x22D
 #define IDC_CYCLE_PATH     0x22E
+#define IDC_HOST_PATH      0x22F
 
 #define IDS_BYLINE         0x300
 #define IDS_MODE_STANDARD  0x301

@@ -55,6 +55,29 @@
 #include "tty.h"
 #include "nabu.h"
 
+// creates a directory for storing the cycles.
+BOOL NEAR makeCycleDirectory( HWND hWnd, char* directory )
+{
+   struct stat st ;
+   char message [ CYCLE_HOST_PATH_LENGTH + 80 ] ;
+   char strip [ CYCLE_HOST_PATH_LENGTH ] ;
+
+   // Strip off the trailing slash before making the directory
+   strncpy( strip, directory, strlen( directory ) -1 ) ;
+   strip[ strlen(directory) - 1 ] = 0 ;
+
+   if ( stat( strip, &st ) == -1 )
+   {
+      if ( mkdir( strip ) == -1 )
+      {
+         sprintf( message, "Could not make cycle directory specificed in settings: \n%s %d", strip, strlen( directory) ) ;
+         MessageBox( hWnd, message, gszAppName, MB_ICONEXCLAMATION ) ;
+         return FALSE;
+      }
+   }
+   return TRUE;
+}
+
 //---------------------------------------------------------------------------
 //  int PASCAL WinMain( HANDLE hInstance, HANDLE hPrevInstance,
 //                      LPSTR lpszCmdLine, int nCmdShow )
@@ -227,12 +250,17 @@ LRESULT FAR PASCAL TTYWndProc( HWND hWnd, UINT uMsg,
                                       (LPARAM) (LPSTR) npTTYInfo ) ;
 
                // if fConnected, set new COM parameters
-
                if (CONNECTED( npTTYInfo ))
                {
                   if (!SetupConnection( hWnd ))
                      MessageBox( hWnd, "Settings failed!", gszAppName,
                                  MB_ICONEXCLAMATION ) ;
+               }
+
+               // If no valid cycle directory, better close the connection!
+               if ( !makeCycleDirectory( hWnd, CYCLEPATH( npTTYInfo ) ) )
+               {
+                  CloseConnection( hWnd ) ;
                }
             }
             break ;
@@ -357,8 +385,10 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    FGCOLOR( npTTYInfo )       = RGB( 0, 0, 0 ) ;
    USECNRECEIVE( npTTYInfo )  = TRUE ;
    DISPLAYERRORS( npTTYInfo ) = FALSE ;
-   CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLEPATH_LENGTH) ;
+   CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
    strcpy( CYCLEPATH( npTTYInfo ), "C:\\cycle\\" ) ;
+   DOWNLOADHOSTANDPATH( npTTYInfo ) = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
+   strcpy( DOWNLOADHOSTANDPATH( npTTYInfo ), "nabu.retrotechchris.com/cycle2" ) ;
 
    // clear screen space
 
@@ -433,6 +463,7 @@ BOOL NEAR DestroyTTYInfo( HWND hWnd )
 
    DeleteObject( HTTYFONT( npTTYInfo ) ) ;
    LocalFree( (HLOCAL) CYCLEPATH( npTTYInfo )) ;
+   LocalFree( (HLOCAL) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
 
    LocalFree( npTTYInfo ) ;
    return ( TRUE ) ;
@@ -919,7 +950,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo )) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -941,7 +972,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo )) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -1028,6 +1059,10 @@ BOOL NEAR OpenConnection( HWND hWnd )
 
    if (NULL == (npTTYInfo = (NPTTYINFO) GetWindowWord( hWnd, GWW_NPTTYINFO )))
       return ( FALSE ) ;
+
+   if ( !makeCycleDirectory ( hWnd, CYCLEPATH( npTTYInfo ) ) ) {
+      return ( FALSE ) ;
+   }
 
    // show the hourglass cursor
    hWaitCursor = LoadCursor( NULL, IDC_WAIT ) ;
@@ -1836,6 +1871,9 @@ BOOL NEAR SettingsDlgInit( HWND hDlg )
    SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_SETTEXT,
                        NULL, (LPARAM) CYCLEPATH( npTTYInfo )) ;
 
+   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_SETTEXT,
+                       NULL, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
+
    return ( TRUE ) ;
 
 } // end of SettingsDlgInit()
@@ -1973,10 +2011,12 @@ BOOL NEAR SettingsDlgTerm( HWND hDlg )
    USECNRECEIVE( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_USECNRECEIVE ) ;
    DISPLAYERRORS( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_DISPLAYERRORS ) ;
    SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_GETTEXT,
-                                  (WPARAM)CYCLEPATH_LENGTH, (LPARAM) CYCLEPATH( npTTYInfo ) ) ;
+                                  (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) CYCLEPATH( npTTYInfo ) ) ;
+   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_GETTEXT,
+                                  (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
 
    // Add a slash to the end of the path if not present and if we are not beyond max length
-   if ( strlen( CYCLEPATH( npTTYInfo)) < CYCLEPATH_LENGTH &&
+   if ( strlen( CYCLEPATH( npTTYInfo)) < CYCLE_HOST_PATH_LENGTH &&
         CYCLEPATH( npTTYInfo )[ strlen( CYCLEPATH( npTTYInfo )) - 1 ] != '\\')
    {
       strcat( CYCLEPATH( npTTYInfo ), "\\");
