@@ -23,7 +23,6 @@
 // calculate dynamically instead
 // Clean up ugly code
 // Don't lock the GUI while downloading files
-// Make web loading optional
 
 // Base on the way that byte reads are not blocking,
 // I've come up with a scheme to track the current processing
