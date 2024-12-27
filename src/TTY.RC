@@ -56,7 +56,7 @@ END
 // Dialog
 //
 
-SETTINGSDLGBOX DIALOG 25, 20, 200, 210
+SETTINGSDLGBOX DIALOG 25, 20, 200, 190
 STYLE WS_POPUP | WS_CAPTION
 CAPTION "NABU Settings..."
 FONT 8, "Helv"
@@ -89,7 +89,7 @@ BEGIN
                     WS_TABSTOP, 135, 20, 50, 10
     CONTROL         "New Line", IDD_NEWLINE, "Button", BS_AUTOCHECKBOX, 135,
                     30, 50, 10
-    GROUPBOX        "Control &Options", 0xFFFF, 5, 135, 190, 70
+    GROUPBOX        "Control &Options", 0xFFFF, 5, 135, 190, 50
     CONTROL         "Use CN_RECEIVE Notifications", IDD_USECNRECEIVE,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 150, 115, 10
     CONTROL         "Display Errors", IDD_DISPLAYERRORS, "Button",
@@ -99,8 +99,6 @@ BEGIN
     PUSHBUTTON      "Cancel", IDD_CANCEL, 140, 105, 40, 14
     EDITTEXT        IDC_CYCLE_PATH, 63, 165, 124, 13, ES_AUTOHSCROLL
     LTEXT           "&Cycle Path:", 0xFFFF, 21, 167, 40, 11, NOT WS_GROUP
-    EDITTEXT        IDC_HOST_PATH, 63, 185, 124, 13, ES_AUTOHSCROLL
-    LTEXT           "&Host Path:", 0xFFFF, 21, 186, 40, 11, NOT WS_GROUP
 END
 
 ABOUTDLGBOX DIALOG 10, 25, 220, 100

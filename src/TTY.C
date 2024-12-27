@@ -382,8 +382,6 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    DISPLAYERRORS( npTTYInfo ) = FALSE ;
    CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
    strcpy( CYCLEPATH( npTTYInfo ), "C:\\cycle\\" ) ;
-   DOWNLOADHOSTANDPATH( npTTYInfo ) = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
-   strcpy( DOWNLOADHOSTANDPATH( npTTYInfo ), "nabu.retrotechchris.com/cycle2" ) ;
 
    // clear screen space
 
@@ -458,7 +456,6 @@ BOOL NEAR DestroyTTYInfo( HWND hWnd )
 
    DeleteObject( HTTYFONT( npTTYInfo ) ) ;
    LocalFree( (HLOCAL) CYCLEPATH( npTTYInfo )) ;
-   LocalFree( (HLOCAL) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
 
    LocalFree( npTTYInfo ) ;
    return ( TRUE ) ;
@@ -945,7 +942,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -967,7 +964,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -1828,9 +1825,6 @@ BOOL NEAR SettingsDlgInit( HWND hDlg )
    SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_SETTEXT,
                        NULL, (LPARAM) CYCLEPATH( npTTYInfo )) ;
 
-   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_SETTEXT,
-                       NULL, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
-
    return ( TRUE ) ;
 
 } // end of SettingsDlgInit()
@@ -1968,8 +1962,6 @@ BOOL NEAR SettingsDlgTerm( HWND hDlg )
    DISPLAYERRORS( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_DISPLAYERRORS ) ;
    SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_GETTEXT,
                                   (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) CYCLEPATH( npTTYInfo ) ) ;
-   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_GETTEXT,
-                                  (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
 
    // Add a slash to the end of the path if not present and if we are not beyond max length
    if ( strlen( CYCLEPATH( npTTYInfo)) < CYCLE_HOST_PATH_LENGTH &&

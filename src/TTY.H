@@ -88,7 +88,6 @@ typedef struct tagTTYINFO
    int     xSize, ySize, xScroll, yScroll, xOffset, yOffset,
            nColumn, nRow, xChar, yChar ;
    char*   cyclePath ;
-   char*   downloadHostAndPath ;
 
 } TTYINFO, NEAR *NPTTYINFO ;
 
@@ -125,7 +124,6 @@ typedef struct tagTTYINFO
 #define USECNRECEIVE( x ) (x -> fUseCNReceive)
 #define DISPLAYERRORS( x ) (x -> fDisplayErrors)
 #define CYCLEPATH( x ) (x -> cyclePath)
-#define DOWNLOADHOSTANDPATH( x ) (x -> downloadHostAndPath)
 
 #define SET_PROP( x, y, z )  SetProp( x, MAKEINTATOM( y ), z )
 #define GET_PROP( x, y )     GetProp( x, MAKEINTATOM( y ) )

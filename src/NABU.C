@@ -69,217 +69,6 @@ int cycleCrcTable[] =
       44955, 49082, 36825, 40952, 28183, 32310, 20053, 24180, 11923,
       16050, 3793, 7920 };
 
-// Grabs a buffer of data from a file accessed via HTTP
-int NEAR grabBuffer( HWND hWnd, SOCKET sd, char* responseBuffer, int bufferLen, BOOL firstGrab )
-{
-   char message[ 80 ] ;
-   int length = 0 ;
-   unsigned long pendingByteCount = 0 ;
-   int result = 0 ;
-
-   // Read the bytes one at a time, ensuring there is data.
-   // We don't want to block the socket, and this ensures that.
-   for (;;)
-   {
-      if ( length > bufferLen )
-      {
-         break ;
-      }
-
-      if ( ioctlsocket(sd, FIONREAD, &pendingByteCount) == SOCKET_ERROR )
-      {
-         wsprintf( message, "A socket error was encountered on poll\r\n" ) ;
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         return -1 ;
-      }
-
-      // We wait for the length to grow greater than zero so that we don't
-      // terminate right away while a response is still outstanding.
-      // (unless this is a subsequent grab of data, in which case, don't wait)
-      else if ( pendingByteCount == 0 && ( length > 0 || !firstGrab ))
-      {
-         break ;
-      }
-
-      result = recv( sd, responseBuffer + length, 1, 0 ) ;
-      if ( result == SOCKET_ERROR )
-      {
-         wsprintf( message, "A socket error was encountered\r\n" ) ;
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         return -1 ;
-      }
-
-      if ( result != 1 )
-      {
-         wsprintf( message, "Bad socket result\r\n" ) ;
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         return -1 ;
-      }
-      length++ ;
-   }
-   return length ;
-}
-
-// Clean up from socket usage
-void socketCleanup( SOCKET sd )
-{
-   if ( sd != INVALID_SOCKET )
-   {
-      closesocket( sd ) ;
-   }
-   WSACleanup() ;
-}
-
-// Download a file via HTTP
-BOOL NEAR downloadFileViaHttp( HWND hWnd, char* filePath, char *hostAndPath, char* fileNameExtension )
-{
-   WSADATA wsaData = { 0 } ;
-   char fileName[ 100 ] ;
-   char fileNameCorrectedExtension [ 5 ];
-   char message[ 120 ] ;
-   SOCKET sd = INVALID_SOCKET ;
-   struct hostent* he = { 0 } ;
-   struct sockaddr_in addr_info = { 0 } ;
-   char sendBuffer[ 120 ] ;
-   int result ;
-   char responseBuffer[ 1000 ] ;
-   int length = 0 ;
-   FILE *file = NULL ;
-   int i ;
-   BOOL firstGrab ;
-   char *dataPtr ;
-   char serverHost[ 100 ] ;
-   char* serverPath = strrchr( hostAndPath, '/' ) + 1 ;
-
-   strncpy(serverHost, hostAndPath, strrchr(hostAndPath, '/') - hostAndPath);
-   serverHost[ strrchr(hostAndPath, '/')- hostAndPath ] = 0;
-
-   if ( result = WSAStartup( 0x202, &wsaData ) != 0 )
-   {
-      wsprintf( message, "No support for WinSock 2.2, or socket init error. cannot download files\r\n" ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      socketCleanup( sd ) ;
-      return FALSE ;
-   }
-
-   wsprintf( sendBuffer, "GET /%s/%06lX%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: nabu31\r\nAccept: */*\r\n\r\n", serverPath, segmentNumber, fileNameExtension, serverHost ) ;
-
-   he = gethostbyname( serverHost ) ;
-   if ( he == NULL )
-   {
-      wsprintf( message, "Failed to get host information for '%s': %s\n", serverHost, strerror( errno ) ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      socketCleanup(sd) ;
-      return FALSE ;
-   }
-
-   sd = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ;
-   if ( sd == INVALID_SOCKET )
-   {
-      wsprintf( message, "Failed to create socket: %s\n", strerror( errno ) ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      socketCleanup( sd ) ;
-      return FALSE ;
-   }
-
-   addr_info.sin_family = AF_INET ;
-   addr_info.sin_port = htons( 80 ) ;
-   addr_info.sin_addr = *(( struct in_addr* )he->h_addr ) ;
-   memset( &( addr_info.sin_zero ), 0, sizeof( addr_info.sin_zero ) ) ;
-
-   result = connect( sd, ( struct sockaddr* )&addr_info, sizeof( struct sockaddr ) ) ;
-   if ( result == -1 )
-   {
-      wsprintf( message, "Failed to connect: %s\r\n", strerror( errno ) ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      socketCleanup( sd ) ;
-      return FALSE ;
-   }
-
-   result = send( sd, sendBuffer, strlen( sendBuffer ), 0 ) ;
-   if ( result == -1 )
-   {
-      wsprintf( message, "failed to send request: %s\r\n", strerror( errno ) ) ;
-      WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      socketCleanup( sd ) ;
-      return FALSE ;
-   }
-
-   // Win16 only supports 8.3 file names, truncate the extension if needed
-   strncpy( fileNameCorrectedExtension, fileNameExtension, 4 ) ;
-   fileNameCorrectedExtension[ 4 ] = 0 ;
-   wsprintf( fileName, "%s%06lX%s", filePath, segmentNumber, fileNameCorrectedExtension ) ;
-
-   firstGrab = TRUE ;
-   while ( TRUE )
-   {
-      length = grabBuffer( hWnd, sd, responseBuffer, sizeof( responseBuffer ), firstGrab ) ;
-      if ( length < 0 )
-      {
-         wsprintf( message, "Failed to retrieve data from socket request\r\n" ) ;
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-         socketCleanup( sd ) ;
-         if ( file != NULL )
-         {
-            fclose( file ) ;
-            unlink( fileName ) ;
-         }
-         return FALSE ;
-      }
-
-      if ( length == 0 )
-      {
-          break ;
-      }
-
-      if ( firstGrab )
-      {
-         dataPtr = strstr( responseBuffer, "HTTP/1.1 200 OK\r\n" ) ;
-         // File not found, return
-         if (dataPtr == NULL)
-         {
-            socketCleanup( sd ) ;
-            return FALSE ;
-         }
-         // Unexpected data, return
-         dataPtr = strstr( responseBuffer, "\r\n\r\n" ) + 4 ;
-         if (dataPtr == NULL)
-         {
-            wsprintf( message, "Unexpected data from HTTP return request\r\n" ) ;
-            WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-            socketCleanup( sd ) ;
-            return FALSE;
-         }
-         firstGrab = FALSE ;
-         length = length - ( dataPtr - responseBuffer ) ;
-
-         // File not found if no content
-         if ( length == 0)
-         {
-            wsprintf( message, "Zero byte result from HTTP request\r\n" ) ;
-            WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-            socketCleanup( sd ) ;
-            return FALSE ;
-         }
-         file = fopen( fileName, "wb" ) ;
-         wsprintf( message, "Downloading from %s\r\n", hostAndPath ) ;
-         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
-      }
-      else
-      {
-         dataPtr = responseBuffer ;
-      }
-
-      for ( i=0; i<length; i++ )
-      {
-         fprintf( file,"%c",dataPtr[i] ) ;
-      }
-   }
-
-   fclose( file ) ;
-   socketCleanup( sd ) ;
-   return TRUE ;
-}
 
 // If we have a loaded packet, free it, and reset the packet pointer and length
 void freeLoadedPackets()
@@ -400,7 +189,7 @@ void NEAR populatePacketHeaderAndCrc( int offset, BOOL lastSegment, BYTE *buffer
 }
 
 // Create a file packet based on the current packet and segment number
-BOOL NEAR createFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL tryDownload )
+BOOL NEAR createFilePacket( HWND hWnd, char* filePath )
 {
    char message[ 80 ] ;
    char segmentName[ 100 ] ;
@@ -414,16 +203,7 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL t
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if ( tryDownload )
-      {
-         downloadFileViaHttp( hWnd, filePath, hostAndPath, ".nabu" ) ;
-         file = fopen( segmentName, "rb" ) ;
-      }
-
-      if ( file == NULL )
-      {
-         return FALSE ;
-      }
+      return FALSE ;
    }
 
    fseek( file, 0, SEEK_END ) ;
@@ -465,7 +245,7 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL t
 }
 
 // Load a file packet based on the current packet and segment number
-BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL tryDownload )
+BOOL NEAR loadFilePacket( HWND hWnd, char* filePath)
 {
    char message[ 80 ] ;
    int packetLength = 0 ;
@@ -479,16 +259,7 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL try
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if (tryDownload )
-      {
-         downloadFileViaHttp(hWnd, filePath, hostAndPath, ".pak") ;
-         file = fopen( segmentName, "rb" ) ;
-      }
-
-      if ( file == NULL )
-      {
-         return FALSE ;
-      }
+      return FALSE ;
    }
 
    fseek( file, 0, SEEK_END ) ;
@@ -562,7 +333,7 @@ void sendPacket( HWND hWnd )
 }
 
 // Handle a file request
-BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPath )
+BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath )
 {
    char message[ 80 ] ;
    char write[ 4 ] ;
@@ -629,21 +400,15 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPat
       }
       // We will try local file access, then download.
       // Ugly code. Wow, this program is brand new and already needs a refactor.
-      else if ( !loadFilePacket( hWnd, filePath, hostAndPath, FALSE ) )
+      else if ( !loadFilePacket( hWnd, filePath ) )
       {
-         if ( !createFilePacket( hWnd, filePath, hostAndPath, FALSE ) )
+         if ( !createFilePacket( hWnd, filePath ) )
          {
-            if ( !loadFilePacket( hWnd, filePath, hostAndPath, TRUE ) )
-            {
-               if ( !createFilePacket( hWnd, filePath, hostAndPath, TRUE ) )
-               {
                    wsprintf( message, "Could not load segment %06X and packet %06X\r\n", segmentNumber, packetNumber );
                    WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
                    WriteCommByte( hWnd, 0x90 ) ;
                    processingStage = 5;
                    return TRUE;
-               }
-            }
          }
       }
 
@@ -713,7 +478,7 @@ BOOL resetNabuState()
 }
 
 // Main NABU processing loop
-void NEAR processNABU( HWND hWnd, BYTE b, char* filePath, char* hostAndPath )
+void NEAR processNABU( HWND hWnd, BYTE b, char* filePath )
 {
    int channel ;
    char message[ 40 ] ;
@@ -764,7 +529,7 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath, char* hostAndPath )
             wsprintf( message, "File Request: " ) ;
             WriteTTYBlock( hWnd, (LPSTR) message, strlen( message )) ;
          }
-         if ( handleFileRequest( hWnd, b, filePath, hostAndPath ) )
+         if ( handleFileRequest( hWnd, b, filePath ) )
          {
             break ;
          }
@@ -837,7 +602,7 @@ void NEAR processNABU( HWND hWnd, BYTE b, char* filePath, char* hostAndPath )
          resetNabuState();
 
          // Let's try to execute the last inititialized command we had
-         processNABU( hWnd, lastResetProcessingByte, filePath, hostAndPath );
+         processNABU( hWnd, lastResetProcessingByte, filePath );
          break ;
    }
 }
