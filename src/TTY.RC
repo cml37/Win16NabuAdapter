@@ -84,13 +84,11 @@ BEGIN
                     105, 50, 10
     CONTROL         "XON/XOFF", IDD_XONXOFF, "Button", BS_AUTOCHECKBOX, 55,
                     115, 50, 10
-    GROUPBOX        "&TTY Options:", 0xFFFF, 125, 5, 70, 55, WS_GROUP
+    GROUPBOX        "&TTY Options:", 0xFFFF, 125, 5, 60, 55, WS_GROUP
     CONTROL         "Autowrap", IDD_AUTOWRAP, "Button", BS_AUTOCHECKBOX |
                     WS_TABSTOP, 135, 20, 50, 10
     CONTROL         "New Line", IDD_NEWLINE, "Button", BS_AUTOCHECKBOX, 135,
                     30, 50, 10
-    CONTROL         "Local Echo", IDD_LOCALECHO, "Button", BS_AUTOCHECKBOX,
-                    135, 40, 50, 10
     GROUPBOX        "Control &Options", 0xFFFF, 5, 135, 190, 70
     CONTROL         "Use CN_RECEIVE Notifications", IDD_USECNRECEIVE,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 150, 115, 10

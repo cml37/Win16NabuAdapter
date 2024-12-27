@@ -33,12 +33,11 @@
 #define IDD_XONXOFF        0x227
 #define IDD_AUTOWRAP       0x228
 #define IDD_NEWLINE        0x229
-#define IDD_LOCALECHO      0x22A
-#define IDD_FONT           0x22B
-#define IDD_USECNRECEIVE   0x22C
-#define IDD_DISPLAYERRORS  0x22D
-#define IDC_CYCLE_PATH     0x22E
-#define IDC_HOST_PATH      0x22F
+#define IDD_FONT           0x22A
+#define IDD_USECNRECEIVE   0x22B
+#define IDD_DISPLAYERRORS  0x22C
+#define IDC_CYCLE_PATH     0x22D
+#define IDC_HOST_PATH      0x22E
 
 #define IDS_BYLINE         0x300
 #define IDS_MODE_STANDARD  0x301
