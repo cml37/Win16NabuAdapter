@@ -108,11 +108,8 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
    while (GetMessage( &msg, NULL, 0, 0 ))
    {
-      if (!TranslateAccelerator( hTTYWnd, ghAccel, &msg ))
-      {
-         TranslateMessage( &msg ) ;
-         DispatchMessage( &msg ) ;
-      }
+      TranslateMessage( &msg ) ;
+      DispatchMessage( &msg ) ;
    }
    return ( (int) msg.wParam ) ;
 
@@ -236,42 +233,6 @@ LRESULT FAR PASCAL TTYWndProc( HWND hWnd, UINT uMsg,
                CloseConnection( hWnd ) ;
                break ;
 
-            case IDM_SETTINGS:
-            {
-               NPTTYINFO  npTTYInfo ;
-
-               if (NULL == (npTTYInfo =
-                               (NPTTYINFO) GetWindowWord( hWnd,
-                                                          GWW_NPTTYINFO )))
-                  return ( FALSE ) ;
-               GoModalDialogBoxParam( GETHINST( hWnd ),
-                                      MAKEINTRESOURCE( SETTINGSDLGBOX ), hWnd,
-                                      SettingsDlgProc,
-                                      (LPARAM) (LPSTR) npTTYInfo ) ;
-
-               // if fConnected, set new COM parameters
-               if (CONNECTED( npTTYInfo ))
-               {
-                  if (!SetupConnection( hWnd ))
-                     MessageBox( hWnd, "Settings failed!", gszAppName,
-                                 MB_ICONEXCLAMATION ) ;
-               }
-
-               // If no valid cycle directory, better close the connection!
-               if ( !makeCycleDirectory( hWnd, CYCLEPATH( npTTYInfo ) ) )
-               {
-                  CloseConnection( hWnd ) ;
-               }
-            }
-            break ;
-
-            case IDM_ABOUT:
-               GoModalDialogBoxParam ( GETHINST( hWnd ),
-                                       MAKEINTRESOURCE( ABOUTDLGBOX ),
-                                       hWnd,
-                                       AboutDlgProc, NULL ) ;
-               break;
-
             case IDM_EXIT:
                PostMessage( hWnd, WM_CLOSE, NULL, 0L ) ;
                break ;
@@ -382,8 +343,6 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    DISPLAYERRORS( npTTYInfo ) = FALSE ;
    CYCLEPATH( npTTYInfo )     = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
    strcpy( CYCLEPATH( npTTYInfo ), "C:\\cycle\\" ) ;
-   DOWNLOADHOSTANDPATH( npTTYInfo ) = ( char* ) LocalAlloc( LPTR, CYCLE_HOST_PATH_LENGTH) ;
-   strcpy( DOWNLOADHOSTANDPATH( npTTYInfo ), "nabu.retrotechchris.com/cycle2" ) ;
 
    // clear screen space
 
@@ -458,7 +417,6 @@ BOOL NEAR DestroyTTYInfo( HWND hWnd )
 
    DeleteObject( HTTYFONT( npTTYInfo ) ) ;
    LocalFree( (HLOCAL) CYCLEPATH( npTTYInfo )) ;
-   LocalFree( (HLOCAL) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
 
    LocalFree( npTTYInfo ) ;
    return ( TRUE ) ;
@@ -945,7 +903,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -967,7 +925,7 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
       {
          if ( nLength = ReadCommByte( hWnd, &abIn ))
          {
-            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ), DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
+            processNABU(hWnd, abIn, CYCLEPATH( npTTYInfo ) ) ;
 
             // force a paint
 
@@ -1009,7 +967,8 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 
 BOOL NEAR OpenConnection( HWND hWnd )
 {
-   char       szPort[ 10 ], szTemp[ 10 ] ;
+   char       szPort[ 10 ] ;
+   char       szTemp[ 10 ] = "COM";
    BOOL       fRetVal ;
    HCURSOR    hOldCursor, hWaitCursor ;
    HMENU      hMenu ;
@@ -1026,9 +985,6 @@ BOOL NEAR OpenConnection( HWND hWnd )
    hWaitCursor = LoadCursor( NULL, IDC_WAIT ) ;
    hOldCursor = SetCursor( hWaitCursor ) ;
 
-   // load the COM prefix string and append port number
-
-   LoadString( GETHINST( hWnd ), IDS_COMPREFIX, szTemp, sizeof( szTemp ) ) ;
    wsprintf( szPort, "%s%d", (LPSTR) szTemp, PORT( npTTYInfo ) ) ;
 
    // open COMM device
@@ -1486,564 +1442,6 @@ BOOL NEAR WriteTTYBlock( HWND hWnd, LPSTR lpBlock, int nLength )
    return ( TRUE ) ;
 
 } // end of WriteTTYBlock()
-
-//---------------------------------------------------------------------------
-//  VOID NEAR GoModalDialogBoxParam( HINSTANCE hInstance,
-//                                   LPCSTR lpszTemplate, HWND hWnd,
-//                                   DLGPROC lpDlgProc, LPARAM lParam )
-//
-//  Description:
-//     It is a simple utility function that simply performs the
-//     MPI and invokes the dialog box with a DWORD paramter.
-//
-//  Parameters:
-//     similar to that of DialogBoxParam() with the exception
-//     that the lpDlgProc is not a procedure instance
-//
-//  History:   Date       Author      Comment
-//              5/10/91   BryanW      Wrote it.
-//
-//---------------------------------------------------------------------------
-
-VOID NEAR GoModalDialogBoxParam( HINSTANCE hInstance, LPCSTR lpszTemplate,
-                                 HWND hWnd, DLGPROC lpDlgProc, LPARAM lParam )
-{
-   DLGPROC  lpProcInstance ;
-
-   lpProcInstance = (DLGPROC) MakeProcInstance( (FARPROC) lpDlgProc,
-                                                hInstance ) ;
-   DialogBoxParam( hInstance, lpszTemplate, hWnd, lpProcInstance, lParam ) ;
-   FreeProcInstance( (FARPROC) lpProcInstance ) ;
-
-} // end of GoModalDialogBoxParam()
-
-//---------------------------------------------------------------------------
-//  BOOL FAR PASCAL AboutDlgProc( HWND hDlg, UINT uMsg,
-//                                WPARAM wParam, LPARAM lParam )
-//
-//  Description:
-//     Simulates the Windows System Dialog Box.
-//
-//  Parameters:
-//     Same as standard dialog procedures.
-//
-//  History:   Date       Author      Comment
-//             10/19/91   BryanW      Added this little extra.
-//
-//---------------------------------------------------------------------------
-
-BOOL FAR PASCAL AboutDlgProc( HWND hDlg, UINT uMsg,
-                              WPARAM wParam, LPARAM lParam )
-{
-   switch (uMsg)
-   {
-      case WM_INITDIALOG:
-      {
-         int          idModeString ;
-         char         szBuffer[ MAXLEN_TEMPSTR ], szTemp[ MAXLEN_TEMPSTR ] ;
-         DWORD        dwFreeMemory, dwWinFlags ;
-         WORD         wFreeResources, wRevision, wVersion ;
-
-#ifdef ABOUTDLG_USEBITMAP
-         // if we are using the bitmap, hide the icon
-
-         ShowWindow( GetDlgItem( hDlg, IDD_ABOUTICON ), SW_HIDE ) ;
-#endif
-         // sets up the version number for Windows
-
-         wVersion = LOWORD( GetVersion() ) ;
-         switch (HIBYTE( wVersion ))
-         {
-            case 10:
-               wRevision = 1 ;
-               break ;
-
-            default:
-               wRevision = 0 ;
-               break;
-         }
-         wVersion &= 0xFF ;
-
-         GetDlgItemText( hDlg, IDD_TITLELINE, szTemp, sizeof( szTemp ) ) ;
-         wsprintf( szBuffer, szTemp, wVersion, wRevision ) ;
-         SetDlgItemText( hDlg, IDD_TITLELINE, szBuffer ) ;
-
-         // sets up version number for TTY
-
-         GetDlgItemText( hDlg, IDD_VERSION, szTemp, sizeof( szTemp ) ) ;
-         wsprintf( szBuffer, szTemp, VER_MAJOR, VER_MINOR, VER_BUILD ) ;
-         SetDlgItemText( hDlg, IDD_VERSION, (LPSTR) szBuffer ) ;
-
-         // get by-line
-
-         LoadString( GETHINST( hDlg ), IDS_BYLINE, szBuffer,
-                     sizeof( szBuffer ) ) ;
-         SetDlgItemText( hDlg, IDD_BYLINE, szBuffer ) ;
-
-         // set windows mode information
-
-         dwWinFlags = GetWinFlags() ;
-         if (dwWinFlags & WF_ENHANCED)
-            idModeString = IDS_MODE_ENHANCED ;
-         else if (dwWinFlags & WF_STANDARD)
-            idModeString = IDS_MODE_STANDARD ;
-         else if (dwWinFlags & WF_WLO)
-            idModeString = IDS_MODE_WLO ;
-         else
-            idModeString = IDS_MODE_UNDEF ;
-
-         LoadString( GETHINST( hDlg ), idModeString, szBuffer,
-                     sizeof( szBuffer ) ) ;
-         SetDlgItemText( hDlg, IDD_WINDOWSMODE, szBuffer ) ;
-
-         // get free memory information
-
-         dwFreeMemory = GetFreeSpace( 0 ) / 1024L ;
-         GetDlgItemText( hDlg, IDD_FREEMEM, szTemp, sizeof( szTemp ) ) ;
-         wsprintf( szBuffer, szTemp, dwFreeMemory ) ;
-         SetDlgItemText( hDlg, IDD_FREEMEM, (LPSTR) szBuffer ) ;
-
-         // get free resources information
-
-         wFreeResources = GetFreeSystemResources( 0 ) ;
-         GetDlgItemText( hDlg, IDD_RESOURCES, szTemp, sizeof( szTemp ) ) ;
-         wsprintf( szBuffer, szTemp, wFreeResources ) ;
-         SetDlgItemText( hDlg, IDD_RESOURCES, (LPSTR) szBuffer ) ;
-      }
-      return ( TRUE ) ;
-
-#ifdef ABOUTDLG_USEBITMAP
-      // used to paint the bitmap
-
-      case WM_PAINT:
-      {
-         HBITMAP      hBitMap ;
-         HDC          hDC, hMemDC ;
-         PAINTSTRUCT  ps ;
-
-         // load bitmap and display it
-
-         hDC = BeginPaint( hDlg, &ps ) ;
-         if (NULL != (hMemDC = CreateCompatibleDC( hDC )))
-         {
-            hBitMap = LoadBitmap( GETHINST( hDlg ),
-                                  MAKEINTRESOURCE( TTYBITMAP ) ) ;
-            hBitMap = SelectObject( hMemDC, hBitMap ) ;
-            BitBlt( hDC, 10, 10, 64, 64, hMemDC, 0, 0, SRCCOPY ) ;
-            DeleteObject( SelectObject( hMemDC, hBitMap ) ) ;
-            DeleteDC( hMemDC ) ;
-         }
-         EndPaint( hDlg, &ps ) ;
-      }
-      break ;
-#endif
-
-      case WM_COMMAND:
-         if ((WORD) wParam == IDD_OK)
-         {
-            EndDialog( hDlg, TRUE ) ;
-            return ( TRUE ) ;
-         }
-         break;
-   }
-   return ( FALSE ) ;
-
-} // end of AboutDlgProc()
-
-//---------------------------------------------------------------------------
-//  VOID NEAR FillComboBox( HINSTANCE hInstance, HWND hCtrlWnd, int nIDString,
-//                          WORD NEAR *npTable, WORD wTableLen,
-//                          WORD wCurrentSetting )
-//
-//  Description:
-//     Fills the given combo box with strings from the resource
-//     table starting at nIDString.  Associated items are
-//     added from given table.  The combo box is notified of
-//     the current setting.
-//
-//  Parameters:
-//     HINSTANCE hInstance
-//        handle to application instance
-//
-//     HWND hCtrlWnd
-//        handle to combo box control
-//
-//     int nIDString
-//        first resource string id
-//
-//     WORD NEAR *npTable
-//        near point to table of associated values
-//
-//     WORD wTableLen
-//        length of table
-//
-//     WORD wCurrentSetting
-//        current setting (for combo box selection)
-//
-//  History:   Date       Author      Comment
-//             10/20/91   BryanW      Pulled from the init procedure.
-//
-//---------------------------------------------------------------------------
-
-VOID NEAR FillComboBox( HINSTANCE hInstance, HWND hCtrlWnd, int nIDString,
-                        WORD NEAR *npTable, WORD wTableLen,
-                        WORD wCurrentSetting )
-{
-   char  szBuffer[ MAXLEN_TEMPSTR ] ;
-   WORD  wCount, wPosition ;
-
-   for (wCount = 0; wCount < wTableLen; wCount++)
-   {
-      // load the string from the string resources and
-      // add it to the combo box
-
-      LoadString( hInstance, nIDString + wCount, szBuffer, sizeof( szBuffer ) ) ;
-      wPosition = LOWORD( SendMessage( hCtrlWnd, CB_ADDSTRING, NULL,
-                                       (LPARAM) (LPSTR) szBuffer ) ) ;
-
-      // use item data to store the actual table value
-
-      SendMessage( hCtrlWnd, CB_SETITEMDATA, (WPARAM) wPosition,
-                   (LPARAM) (LONG) *(npTable + wCount) ) ;
-
-      // if this is our current setting, select it
-
-      if (*(npTable + wCount) == wCurrentSetting)
-         SendMessage( hCtrlWnd, CB_SETCURSEL, (WPARAM) wPosition, NULL ) ;
-   }
-
-} // end of FillComboBox()
-
-//---------------------------------------------------------------------------
-//  BOOL NEAR SettingsDlgInit( HWND hDlg )
-//
-//  Description:
-//     Puts current settings into dialog box (via CheckRadioButton() etc.)
-//
-//  Parameters:
-//     HWND hDlg
-//        handle to dialog box
-//
-//  History:   Date       Author      Comment
-//              5/11/91   BryanW      Wrote it.
-//             10/20/91   BryanW      Dialog revision.
-//             10/24/91   BryanW      Bug in EscapeCommFunction() call.
-//
-//---------------------------------------------------------------------------
-
-BOOL NEAR SettingsDlgInit( HWND hDlg )
-{
-   char       szBuffer[ MAXLEN_TEMPSTR ], szTemp[ MAXLEN_TEMPSTR ] ;
-   NPTTYINFO  npTTYInfo ;
-   WORD       wCount, wMaxCOM, wPosition ;
-
-   if (NULL == (npTTYInfo = (NPTTYINFO) GET_PROP( hDlg, ATOM_TTYINFO )))
-      return ( FALSE ) ;
-
-   wMaxCOM = LOWORD( EscapeCommFunction( NULL, GETMAXCOM ) ) + 1 ;
-
-   // load the COM prefix from resources
-
-   LoadString( GETHINST( hDlg ), IDS_COMPREFIX, szTemp, sizeof( szTemp ) ) ;
-
-   // fill port combo box and make initial selection
-
-   for (wCount = 0; wCount < wMaxCOM; wCount++)
-   {
-      wsprintf( szBuffer, "%s%d", (LPSTR) szTemp, wCount + 1 ) ;
-      SendDlgItemMessage( hDlg, IDD_PORTCB, CB_ADDSTRING, NULL,
-                          (LPARAM) (LPSTR) szBuffer ) ;
-   }
-   SendDlgItemMessage( hDlg, IDD_PORTCB, CB_SETCURSEL,
-                       (WPARAM) (PORT( npTTYInfo ) - 1), NULL ) ;
-
-   // disable COM port combo box if connection has already been
-   // established (e.g. OpenComm() already successful)
-
-   EnableWindow( GetDlgItem( hDlg, IDD_PORTCB ), !CONNECTED( npTTYInfo ) ) ;
-
-   // fill baud combo box and make initial selection
-
-   FillComboBox( GETHINST( hDlg ), GetDlgItem( hDlg, IDD_BAUDCB ),
-                 IDS_BAUD111861, gawBaudTable,
-                 sizeof( gawBaudTable ) / sizeof( WORD ),
-                 BAUDRATE( npTTYInfo ) ) ;
-
-   // fill data bits combo box and make initial selection
-
-   for (wCount = 5; wCount < 9; wCount++)
-   {
-      wsprintf( szBuffer, "%d", wCount ) ;
-      wPosition = LOWORD( SendDlgItemMessage( hDlg, IDD_DATABITSCB,
-                                              CB_ADDSTRING, NULL,
-                                              (LPARAM) (LPSTR) szBuffer ) ) ;
-
-      // if current selection, tell the combo box
-
-      if (wCount == BYTESIZE( npTTYInfo ))
-         SendDlgItemMessage( hDlg, IDD_DATABITSCB, CB_SETCURSEL,
-                             (WPARAM) wPosition, NULL ) ;
-   }
-
-   // fill parity combo box and make initial selection
-
-   FillComboBox( GETHINST( hDlg ), GetDlgItem( hDlg, IDD_PARITYCB ),
-                 IDS_PARITYNONE, gawParityTable,
-                 sizeof( gawParityTable ) / sizeof( WORD ),
-                 PARITY( npTTYInfo ) ) ;
-
-   // fill stop bits combo box and make initial selection
-
-   FillComboBox( GETHINST( hDlg ), GetDlgItem( hDlg, IDD_STOPBITSCB ),
-                 IDS_ONESTOPBIT, gawStopBitsTable,
-                 sizeof( gawStopBitsTable ) / sizeof ( WORD ),
-                 STOPBITS( npTTYInfo ) ) ;
-
-   // initalize the flow control settings
-
-   CheckDlgButton( hDlg, IDD_DTRDSR,
-                   (FLOWCTRL( npTTYInfo ) & FC_DTRDSR) > 0 ) ;
-   CheckDlgButton( hDlg, IDD_RTSCTS,
-                   (FLOWCTRL( npTTYInfo ) & FC_RTSCTS) > 0 ) ;
-   CheckDlgButton( hDlg, IDD_XONXOFF,
-                   (FLOWCTRL( npTTYInfo ) & FC_XONXOFF) > 0 ) ;
-
-   // other TTY settings
-
-   CheckDlgButton( hDlg, IDD_AUTOWRAP, AUTOWRAP( npTTYInfo ) ) ;
-   CheckDlgButton( hDlg, IDD_NEWLINE, NEWLINE( npTTYInfo ) ) ;
-
-   // control options
-
-   CheckDlgButton( hDlg, IDD_USECNRECEIVE, USECNRECEIVE( npTTYInfo ) ) ;
-
-   // disable Use CN_RECEIVE option if connection has already been
-   // established (e.g. OpenComm() already successful)
-
-   EnableWindow( GetDlgItem( hDlg, IDD_USECNRECEIVE ),
-                 !CONNECTED( npTTYInfo ) ) ;
-
-   CheckDlgButton( hDlg, IDD_DISPLAYERRORS, DISPLAYERRORS( npTTYInfo ) ) ;
-
-   SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_SETTEXT,
-                       NULL, (LPARAM) CYCLEPATH( npTTYInfo )) ;
-
-   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_SETTEXT,
-                       NULL, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo )) ;
-
-   return ( TRUE ) ;
-
-} // end of SettingsDlgInit()
-
-//---------------------------------------------------------------------------
-//  BOOL NEAR SelectTTYFont( HWND hDlg )
-//
-//  Description:
-//     Selects the current font for the TTY screen.
-//     Uses the Common Dialog ChooseFont() API.
-//
-//  Parameters:
-//     HWND hDlg
-//        handle to settings dialog
-//
-//  History:   Date       Author      Comment
-//             10/20/91   BryanW      Wrote it.
-//
-//---------------------------------------------------------------------------
-
-BOOL NEAR SelectTTYFont( HWND hDlg )
-{
-   CHOOSEFONT  cfTTYFont ;
-   NPTTYINFO   npTTYInfo ;
-
-   if (NULL == (npTTYInfo = (NPTTYINFO) GET_PROP( hDlg, ATOM_TTYINFO )))
-      return ( FALSE ) ;
-
-   cfTTYFont.lStructSize    = sizeof( CHOOSEFONT ) ;
-   cfTTYFont.hwndOwner      = hDlg ;
-   cfTTYFont.hDC            = NULL ;
-   cfTTYFont.rgbColors      = FGCOLOR( npTTYInfo ) ;
-   cfTTYFont.lpLogFont      = &LFTTYFONT( npTTYInfo ) ;
-   cfTTYFont.Flags          = CF_SCREENFONTS | CF_FIXEDPITCHONLY |
-                              CF_EFFECTS | CF_INITTOLOGFONTSTRUCT ;
-   cfTTYFont.lCustData      = NULL ;
-   cfTTYFont.lpfnHook       = NULL ;
-   cfTTYFont.lpTemplateName = NULL ;
-   cfTTYFont.hInstance      = GETHINST( hDlg ) ;
-
-   if (ChooseFont( &cfTTYFont ))
-   {
-     FGCOLOR( npTTYInfo ) = cfTTYFont.rgbColors ;
-     ResetTTYScreen( GetParent( hDlg ), npTTYInfo ) ;
-   }
-
-   return ( TRUE ) ;
-
-} // end of SelectTTYFont()
-
-//---------------------------------------------------------------------------
-//  BOOL NEAR SettingsDlgTerm( HWND hDlg )
-//
-//  Description:
-//     Puts dialog contents into TTY info structure.
-//
-//  Parameters:
-//     HWND hDlg
-//        handle to settings dialog
-//
-//  History:   Date       Author      Comment
-//              5/11/91   BryanW      Wrote it.
-//
-//---------------------------------------------------------------------------
-
-BOOL NEAR SettingsDlgTerm( HWND hDlg )
-{
-   NPTTYINFO  npTTYInfo ;
-   WORD       wSelection ;
-
-   if (NULL == (npTTYInfo = (NPTTYINFO) GET_PROP( hDlg, ATOM_TTYINFO )))
-      return ( FALSE ) ;
-
-   // get port selection
-
-   PORT( npTTYInfo ) =
-      LOBYTE( LOWORD( SendDlgItemMessage( hDlg, IDD_PORTCB,
-                                          CB_GETCURSEL,
-                                          NULL, NULL ) ) + 1 ) ;
-   // get baud rate selection
-
-   wSelection =
-      LOWORD( SendDlgItemMessage( hDlg, IDD_BAUDCB, CB_GETCURSEL,
-                                  NULL, NULL ) ) ;
-   BAUDRATE( npTTYInfo ) =
-      LOWORD( SendDlgItemMessage( hDlg, IDD_BAUDCB, CB_GETITEMDATA,
-                                  (WPARAM) wSelection, NULL ) ) ;
-
-   // get data bits selection
-
-   BYTESIZE( npTTYInfo ) =
-      LOBYTE( LOWORD( SendDlgItemMessage( hDlg, IDD_DATABITSCB,
-                                          CB_GETCURSEL,
-                                          NULL, NULL ) ) + 5 ) ;
-
-   // get parity selection
-
-   wSelection =
-      LOWORD( SendDlgItemMessage( hDlg, IDD_PARITYCB, CB_GETCURSEL,
-                                  NULL, NULL ) ) ;
-   PARITY( npTTYInfo ) =
-      LOBYTE( LOWORD( SendDlgItemMessage( hDlg, IDD_PARITYCB,
-                                          CB_GETITEMDATA,
-                                          (WPARAM) wSelection,
-                                           NULL ) ) ) ;
-
-   // get stop bits selection
-
-   wSelection =
-      LOWORD( SendDlgItemMessage( hDlg, IDD_STOPBITSCB, CB_GETCURSEL,
-                                  NULL, NULL ) ) ;
-   STOPBITS( npTTYInfo ) =
-      LOBYTE( LOWORD( SendDlgItemMessage( hDlg, IDD_STOPBITSCB,
-                                          CB_GETITEMDATA,
-                                          (WPARAM) wSelection, NULL ) ) ) ;
-
-   // get flow control settings
-
-   FLOWCTRL( npTTYInfo ) = 0 ;
-   if (IsDlgButtonChecked( hDlg, IDD_DTRDSR ))
-      FLOWCTRL( npTTYInfo ) |= FC_DTRDSR ;
-   if (IsDlgButtonChecked( hDlg, IDD_RTSCTS ))
-      FLOWCTRL( npTTYInfo ) |= FC_RTSCTS ;
-   if (IsDlgButtonChecked( hDlg, IDD_XONXOFF ))
-      FLOWCTRL( npTTYInfo ) |= FC_XONXOFF ;
-
-   // get other various settings
-
-   AUTOWRAP( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_AUTOWRAP ) ;
-   NEWLINE( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_NEWLINE ) ;
-
-   // control options
-
-   USECNRECEIVE( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_USECNRECEIVE ) ;
-   DISPLAYERRORS( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_DISPLAYERRORS ) ;
-   SendDlgItemMessage( hDlg, IDC_CYCLE_PATH, WM_GETTEXT,
-                                  (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) CYCLEPATH( npTTYInfo ) ) ;
-   SendDlgItemMessage( hDlg, IDC_HOST_PATH, WM_GETTEXT,
-                                  (WPARAM)CYCLE_HOST_PATH_LENGTH, (LPARAM) DOWNLOADHOSTANDPATH( npTTYInfo ) ) ;
-
-   // Add a slash to the end of the path if not present and if we are not beyond max length
-   if ( strlen( CYCLEPATH( npTTYInfo)) < CYCLE_HOST_PATH_LENGTH &&
-        CYCLEPATH( npTTYInfo )[ strlen( CYCLEPATH( npTTYInfo )) - 1 ] != '\\')
-   {
-      strcat( CYCLEPATH( npTTYInfo ), "\\");
-   }
-
-   return ( TRUE ) ;
-
-} // end of SettingsDlgTerm()
-
-//---------------------------------------------------------------------------
-//  BOOL FAR PASCAL SettingsDlgProc( HWND hDlg, UINT uMsg,
-//                                   WPARAM wParam, LPARAM lParam )
-//
-//  Description:
-//     This handles all of the user preference settings for
-//     the TTY.
-//
-//  Parameters:
-//     same as all dialog procedures
-//
-//  History:   Date       Author      Comment
-//              5/10/91   BryanW      Wrote it.
-//             10/20/91   BryanW      Now uses window properties to
-//                                    store TTYInfo handle.  Also added
-//                                    font selection.
-//
-//---------------------------------------------------------------------------
-
-BOOL FAR PASCAL SettingsDlgProc( HWND hDlg, UINT uMsg,
-                                 WPARAM wParam, LPARAM lParam )
-{
-   switch (uMsg)
-   {
-      case WM_INITDIALOG:
-      {
-         NPTTYINFO  npTTYInfo ;
-
-         // get & save pointer to TTY info structure
-
-         npTTYInfo = (NPTTYINFO) LOWORD( lParam ) ;
-         SET_PROP( hDlg, ATOM_TTYINFO, (HANDLE) npTTYInfo ) ;
-
-         return ( SettingsDlgInit( hDlg ) ) ;
-      }
-
-      case WM_COMMAND:
-         switch ((WORD) wParam)
-         {
-            case IDD_FONT:
-               return ( SelectTTYFont( hDlg ) ) ;
-
-            case IDD_OK:
-               // Copy stuff into structure
-               SettingsDlgTerm( hDlg ) ;
-               EndDialog( hDlg, TRUE ) ;
-               return ( TRUE ) ;
-
-            case IDD_CANCEL:
-               // Just end
-               EndDialog( hDlg, TRUE ) ;
-               return ( TRUE ) ;
-         }
-         break;
-
-      case WM_DESTROY:
-         REMOVE_PROP( hDlg, ATOM_TTYINFO ) ;
-         break ;
-   }
-   return ( FALSE ) ;
-
-} // end of SettingsDlgProc()
 
 //---------------------------------------------------------------------------
 //  End of File: tty.c

@@ -33,7 +33,6 @@
 // constant definitions
 
 #define GWW_NPTTYINFO       0
-#define ABOUTDLG_USEBITMAP  1
 
 #define ATOM_TTYINFO       0x100
 
@@ -88,7 +87,6 @@ typedef struct tagTTYINFO
    int     xSize, ySize, xScroll, yScroll, xOffset, yOffset,
            nColumn, nRow, xChar, yChar ;
    char*   cyclePath ;
-   char*   downloadHostAndPath ;
 
 } TTYINFO, NEAR *NPTTYINFO ;
 
@@ -125,29 +123,12 @@ typedef struct tagTTYINFO
 #define USECNRECEIVE( x ) (x -> fUseCNReceive)
 #define DISPLAYERRORS( x ) (x -> fDisplayErrors)
 #define CYCLEPATH( x ) (x -> cyclePath)
-#define DOWNLOADHOSTANDPATH( x ) (x -> downloadHostAndPath)
-
-#define SET_PROP( x, y, z )  SetProp( x, MAKEINTATOM( y ), z )
-#define GET_PROP( x, y )     GetProp( x, MAKEINTATOM( y ) )
-#define REMOVE_PROP( x, y )  RemoveProp( x, MAKEINTATOM( y ) )
 
 // global stuff
 
 char     gszTTYClass[] = "TTYWndClass" ;
 char     gszAppName[] = "NABU For Windows" ;
 HANDLE   ghAccel ;
-WORD NEAR gawBaudTable[] = { (WORD)111861,
-                             (WORD)123137  } ;
-
-WORD NEAR gawParityTable[] = { NOPARITY,
-                              EVENPARITY,
-                              ODDPARITY,
-                              MARKPARITY,
-                              SPACEPARITY } ;
-
-WORD NEAR gawStopBitsTable[] = { ONESTOPBIT,
-                                ONE5STOPBITS,
-                                TWOSTOPBITS } ;
 
 // function prototypes (private)
 
@@ -172,17 +153,10 @@ BOOL NEAR OpenConnection( HWND ) ;
 BOOL NEAR SetupConnection( HWND ) ;
 BOOL NEAR CloseConnection( HWND ) ;
 BOOL NEAR ProcessCOMMNotification( HWND, WORD, LONG ) ;
-VOID NEAR GoModalDialogBoxParam( HINSTANCE, LPCSTR, HWND, DLGPROC, LPARAM ) ;
-VOID NEAR FillComboBox( HINSTANCE, HWND, int, WORD NEAR *, WORD, WORD ) ;
-BOOL NEAR SelectTTYFont( HWND ) ;
-BOOL NEAR SettingsDlgInit( HWND ) ;
-BOOL NEAR SettingsDlgTerm( HWND ) ;
 
 // function prototypes (public)
 
 LRESULT FAR PASCAL TTYWndProc( HWND, UINT, WPARAM, LPARAM ) ;
-BOOL FAR PASCAL AboutDlgProc( HWND, UINT, WPARAM, LPARAM ) ;
-BOOL FAR PASCAL SettingsDlgProc( HWND, UINT, WPARAM, LPARAM ) ;
 
 //---------------------------------------------------------------------------
 //  End of File: tty.h
