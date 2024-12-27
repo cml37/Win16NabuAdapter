@@ -78,7 +78,7 @@ typedef struct tagTTYINFO
 {
    int     idComDev ;
    BYTE    bPort, abScreen[ MAXROWS * MAXCOLS ] ;
-   BOOL    fConnected, fXonXoff, fLocalEcho, fNewLine, fAutoWrap,
+   BOOL    fConnected, fXonXoff, fNewLine, fAutoWrap,
            fUseCNReceive, fDisplayErrors;
    BYTE    bByteSize, bFlowCtrl, bParity, bStopBits ;
    DWORD   wBaudRate, wCursorState ;
@@ -101,7 +101,6 @@ typedef struct tagTTYINFO
 #define SCREEN( x ) (x -> abScreen)
 #define CONNECTED( x ) (x -> fConnected)
 #define XONXOFF( x ) (x -> fXonXoff)
-#define LOCALECHO( x ) (x -> fLocalEcho)
 #define NEWLINE( x ) (x -> fNewLine)
 #define AUTOWRAP( x ) (x -> fAutoWrap)
 #define BYTESIZE( x ) (x -> bByteSize)
@@ -163,7 +162,6 @@ BOOL NEAR SetTTYFocus( HWND ) ;
 BOOL NEAR ScrollTTYHorz( HWND, WORD, WORD ) ;
 BOOL NEAR ScrollTTYVert( HWND, WORD, WORD ) ;
 BOOL NEAR SizeTTY( HWND, WORD, WORD ) ;
-BOOL NEAR ProcessTTYCharacter( HWND, BYTE ) ;
 BOOL NEAR WriteTTYBlock( HWND, LPSTR, int ) ;
 int NEAR ReadCommBlock( HWND, LPSTR, int ) ;
 int NEAR ReadCommByte( HWND, BYTE* ) ;

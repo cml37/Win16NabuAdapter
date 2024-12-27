@@ -299,10 +299,6 @@ LRESULT FAR PASCAL TTYWndProc( HWND hWnd, UINT uMsg,
          ScrollTTYVert( hWnd, (WORD) wParam, LOWORD( lParam ) ) ;
          break ;
 
-      case WM_CHAR:
-         ProcessTTYCharacter( hWnd, LOBYTE( wParam ) ) ;
-         break ;
-
       case WM_SETFOCUS:
          SetTTYFocus( hWnd ) ;
          break ;
@@ -364,7 +360,6 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    COMDEV( npTTYInfo )        = 0 ;
    CONNECTED( npTTYInfo )     = FALSE ;
    CURSORSTATE( npTTYInfo )   = CS_HIDE ;
-   LOCALECHO( npTTYInfo )     = FALSE ;
    AUTOWRAP( npTTYInfo )      = TRUE ;
    PORT( npTTYInfo )          = 1 ;
    BAUDRATE( npTTYInfo )      = 123137 ;
@@ -994,43 +989,6 @@ BOOL NEAR ProcessCOMMNotification( HWND hWnd, WORD wParam, LONG lParam )
 
 } // end of ProcessCOMMNotification()
 
-//---------------------------------------------------------------------------
-//  BOOL NEAR ProcessTTYCharacter( HWND hWnd, BYTE bOut )
-//
-//  Description:
-//     This simply writes a character to the port and echos it
-//     to the TTY screen if fLocalEcho is set.  Some minor
-//     keyboard mapping could be performed here.
-//
-//  Parameters:
-//     HWND hWnd
-//        handle to TTY window
-//
-//     BYTE bOut
-//        byte from keyboard
-//
-//  History:   Date       Author      Comment
-//              5/11/91   BryanW      Wrote it.
-//
-//---------------------------------------------------------------------------
-
-BOOL NEAR ProcessTTYCharacter( HWND hWnd, BYTE bOut )
-{
-   NPTTYINFO  npTTYInfo ;
-
-   if (NULL == (npTTYInfo = (NPTTYINFO) GetWindowWord( hWnd, GWW_NPTTYINFO )))
-      return ( FALSE ) ;
-
-   if (!CONNECTED( npTTYInfo ))
-      return ( FALSE ) ;
-
-   WriteCommByte( hWnd, bOut ) ;
-   if (LOCALECHO( npTTYInfo ))
-      WriteTTYBlock( hWnd, &bOut, 1 ) ;
-
-   return ( TRUE ) ;
-
-} // end of ProcessTTYCharacter()
 
 //---------------------------------------------------------------------------
 //  BOOL NEAR OpenConnection( HWND hWnd )
@@ -1854,7 +1812,6 @@ BOOL NEAR SettingsDlgInit( HWND hDlg )
 
    CheckDlgButton( hDlg, IDD_AUTOWRAP, AUTOWRAP( npTTYInfo ) ) ;
    CheckDlgButton( hDlg, IDD_NEWLINE, NEWLINE( npTTYInfo ) ) ;
-   CheckDlgButton( hDlg, IDD_LOCALECHO, LOCALECHO( npTTYInfo ) ) ;
 
    // control options
 
@@ -2004,7 +1961,6 @@ BOOL NEAR SettingsDlgTerm( HWND hDlg )
 
    AUTOWRAP( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_AUTOWRAP ) ;
    NEWLINE( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_NEWLINE ) ;
-   LOCALECHO( npTTYInfo ) = IsDlgButtonChecked( hDlg, IDD_LOCALECHO ) ;
 
    // control options
 
