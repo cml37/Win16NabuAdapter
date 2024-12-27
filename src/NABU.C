@@ -189,7 +189,7 @@ void NEAR populatePacketHeaderAndCrc( int offset, BOOL lastSegment, BYTE *buffer
 }
 
 // Create a file packet based on the current packet and segment number
-BOOL NEAR createFilePacket( HWND hWnd, char* filePath, BOOL tryDownload )
+BOOL NEAR createFilePacket( HWND hWnd, char* filePath )
 {
    char message[ 80 ] ;
    char segmentName[ 100 ] ;
@@ -203,15 +203,7 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, BOOL tryDownload )
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if ( tryDownload )
-      {
-         file = fopen( segmentName, "rb" ) ;
-      }
-
-      if ( file == NULL )
-      {
-         return FALSE ;
-      }
+      return FALSE ;
    }
 
    fseek( file, 0, SEEK_END ) ;
@@ -253,7 +245,7 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, BOOL tryDownload )
 }
 
 // Load a file packet based on the current packet and segment number
-BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, BOOL tryDownload )
+BOOL NEAR loadFilePacket( HWND hWnd, char* filePath)
 {
    char message[ 80 ] ;
    int packetLength = 0 ;
@@ -267,15 +259,7 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, BOOL tryDownload )
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if (tryDownload )
-      {
-         file = fopen( segmentName, "rb" ) ;
-      }
-
-      if ( file == NULL )
-      {
-         return FALSE ;
-      }
+      return FALSE ;
    }
 
    fseek( file, 0, SEEK_END ) ;
@@ -408,23 +392,23 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath )
       {
          createTimeSegment();
       }
-      // We will try local file access, then download.
-          // Ugly code. Wow, this program is brand new and already needs a refactor.
-      else if ( !loadFilePacket( hWnd, filePath, FALSE ) )
+      else if ( segmentNumber == 0x83 || packetNumber == 0x83 )
       {
-         if ( !createFilePacket( hWnd, filePath, FALSE ) )
+         wsprintf( message, "NABU reset detected\r\n" ) ;
+         WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
+         return FALSE ;
+      }
+      // We will try local file access, then download.
+      // Ugly code. Wow, this program is brand new and already needs a refactor.
+      else if ( !loadFilePacket( hWnd, filePath ) )
+      {
+         if ( !createFilePacket( hWnd, filePath ) )
          {
-            if ( !loadFilePacket( hWnd, filePath, TRUE ) )
-            {
-               if ( !createFilePacket( hWnd, filePath, TRUE ) )
-               {
                    wsprintf( message, "Could not load segment %06X and packet %06X\r\n", segmentNumber, packetNumber );
                    WriteTTYBlock( hWnd, (LPSTR) message, strlen( message ) ) ;
                    WriteCommByte( hWnd, 0x90 ) ;
                    processingStage = 5;
                    return TRUE;
-               }
-            }
          }
       }
 
