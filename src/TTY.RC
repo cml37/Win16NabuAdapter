@@ -105,13 +105,13 @@ END
 
 ABOUTDLGBOX DIALOG 10, 25, 220, 100
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About NABU For Windows 3.1"
+CAPTION "About NABU For Windows"
 FONT 8, "Helv"
 BEGIN
     ICON            TTYICON, IDD_ABOUTICON, 10, 5, 18, 20
     LTEXT           "Microsoft Windows v.%d.%d", IDD_TITLELINE, 45, 5, 127,
                     10, SS_NOPREFIX | NOT WS_GROUP
-    LTEXT           "NABU for Windows 3.1 v.%02d.%02d.%03d", IDD_VERSION, 45, 15, 120,
+    LTEXT           "NABU for Windows v.%02d.%02d.%03d", IDD_VERSION, 45, 15, 120,
                     10, SS_NOPREFIX | NOT WS_GROUP
     LTEXT           "Copyright © 2024 Chris Lenderman.", 0xFFFF, 45, 25, 145,
                     10, SS_NOPREFIX | NOT WS_GROUP

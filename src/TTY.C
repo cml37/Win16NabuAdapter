@@ -314,7 +314,7 @@ LRESULT FAR PASCAL TTYWndProc( HWND hWnd, UINT uMsg,
          break ;
 
       case WM_CLOSE:
-         if (IDOK != MessageBox( hWnd, "OK to close window?", "TTY Sample",
+         if (IDOK != MessageBox( hWnd, "OK to close window?", gszAppName,
                                  MB_ICONQUESTION | MB_OKCANCEL ))
             break ;
 

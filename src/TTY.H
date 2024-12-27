@@ -134,7 +134,7 @@ typedef struct tagTTYINFO
 // global stuff
 
 char     gszTTYClass[] = "TTYWndClass" ;
-char     gszAppName[] = "NABU For Windows 3.1" ;
+char     gszAppName[] = "NABU For Windows" ;
 HANDLE   ghAccel ;
 WORD NEAR gawBaudTable[] = { (WORD)111861,
                              (WORD)123137  } ;
