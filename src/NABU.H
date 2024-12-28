@@ -21,7 +21,7 @@
 #include <io.h>
 #include <winsock.h>
 
-BOOL resetNabuState() ;
+void NEAR resetNabuState() ;
 void NEAR processNABU( HWND, BYTE, char*, char* ) ;
 
 #define PACKET_HEADER_SIZE 16

@@ -355,7 +355,7 @@ void NEAR createTimeSegment()
 }
 
 // Populates the packet header and CRC
-void NEAR populatePacketHeaderAndCrc( int offset, BOOL lastSegment, BYTE *buffer, int bytesRead )
+void NEAR populatePacketHeaderAndCrc( long offset, BOOL lastSegment, BYTE *buffer, int bytesRead )
 {
    BYTE type = 0x20 ;
 
@@ -407,7 +407,7 @@ BOOL NEAR createFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL t
    FILE *file ;
    long fileSize = 0 ;
    int currentPacket = 0 ;
-   int offset = 0 ;
+   long offset = 0 ;
    int bytesRead = 0 ;
 
    wsprintf( segmentName, "%s%06lX.nab", filePath, segmentNumber ) ;
@@ -704,12 +704,11 @@ BOOL NEAR handleFileRequest( HWND hWnd, BYTE b, char* filePath, char* hostAndPat
 }
 
 // Reset the NABU state machine
-BOOL resetNabuState()
+void NEAR resetNabuState()
 {
    processingByteInitialized = FALSE ;
    processingStage = 0 ;
    freeLoadedPackets() ;
-   return TRUE ;
 }
 
 // Main NABU processing loop
