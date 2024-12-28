@@ -20,7 +20,7 @@
 #include <time.h>
 #include <io.h>
 
-BOOL resetNabuState() ;
+void NEAR resetNabuState() ;
 void NEAR processNABU( HWND, BYTE, char* ) ;
 
 #define PACKET_HEADER_SIZE 16
