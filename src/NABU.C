@@ -28,7 +28,7 @@
 // I've come up with a scheme to track the current processing
 // command byte as well as determine which stage we are in for the processing byte
 BYTE lastResetProcessingByte = 0x0;
-BYTE processingByte;
+BYTE processingByte ;
 BOOL processingByteInitialized = FALSE ;
 int  processingStage = 0 ;
 
