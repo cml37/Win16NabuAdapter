@@ -1,11 +1,11 @@
-42
+40
 projectIdent
 0
 VpeMain
 1
 WRect
 1420
-414
+320
 7640
 8960
 2
@@ -28,10 +28,10 @@ WVList
 VComponent
 8
 WRect
-260
-237
-5660
-4207
+0
+0
+5673
+4231
 0
 0
 9
@@ -39,5 +39,5 @@ WFileName
 8
 nabu.tgt
 0
-14
+0
 7

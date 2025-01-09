@@ -479,9 +479,9 @@ BOOL NEAR loadFilePacket( HWND hWnd, char* filePath, char* hostAndPath, BOOL try
    file = fopen( segmentName, "rb" ) ;
    if ( file == NULL )
    {
-      if (tryDownload )
+      if ( tryDownload )
       {
-         downloadFileViaHttp(hWnd, filePath, hostAndPath, ".pak") ;
+         downloadFileViaHttp( hWnd, filePath, hostAndPath, ".pak" ) ;
          file = fopen( segmentName, "rb" ) ;
       }
 
