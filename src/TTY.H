@@ -26,6 +26,7 @@
 #include <commdlg.h>
 #include <string.h>
 #include <unistd.h>
+#include <direct.h>
 
 #include "version.h"
 #include "resource.h"
